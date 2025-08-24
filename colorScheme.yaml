@@ -53,7 +53,8 @@ main: |
   }
   #labelLocation {
     background-color: #3C3C3C;
-    color: #FFFFFF;
+    color: #AAAAAA;
+    font-style: italic;
     border: 0px solid #555555;
     border-radius: 5px;
     padding-left: 10px;
@@ -64,4 +65,14 @@ main: |
   }
   #labelLocation:pressed {
     background-color: #555555;
+  }
+  #labelLocationFinal {
+    color: #AAAAAA;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+  #libraryList {
+    background-color: #333333;
+    border-radius: 8px;
+    border: 1px solid #444444;
   }

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -15,6 +17,8 @@ var defaultPackages = map[string]bool{
 	"setuptools": true,
 	"wheel":      true,
 }
+
+var debugFlag bool = false
 
 type Library struct {
 	Name    string `json:"name"`
@@ -42,7 +46,9 @@ func findVirtualEnv(root string) ([]string, error) {
 		}
 		if !d.IsDir() && d.Name() == "pyvenv.cfg" {
 			venvPath := filepath.Dir(path)
-			fmt.Printf("Found virtual Env at %s\n", path)
+			if debugFlag {
+				fmt.Printf("Found virtual Env at %s\n", path)
+			}
 			virtualEnvs = append(virtualEnvs, venvPath)
 			return filepath.SkipDir
 		}
@@ -55,6 +61,7 @@ func findVirtualEnv(root string) ([]string, error) {
 }
 
 func getInstalledLibraries(venvPath string) ([]Library, error) {
+	// I also need to implement the storage thingy
 	// Here we need to consider different systems windows & macOS or linux
 	// I'm currently on macOS
 	binpath := "bin" // macOS or linux
@@ -62,15 +69,13 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 		binpath = "Scripts"
 	}
 	pipExec := filepath.Join(venvPath, binpath, "pip")
-	fmt.Printf("%s\n", pipExec)
-	pythonExec := filepath.Join(venvPath, binpath, "python")
+	// pythonExec := filepath.Join(venvPath, binpath, "python")
 
-	siteCmd := exec.Command(pythonExec, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])")
-	siteOutput, err := siteCmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("error getting site packages path: %w", err)
-	}
-	fmt.Printf("%s\n", siteOutput)
+	// siteCmd := exec.Command(pythonExec, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])")
+	// siteOutput, err := siteCmd.Output()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("error getting site packages path: %w", err)
+	// }
 	// sitePackagesPath := strings.TrimSpace(string(siteOutput))
 
 	listCmd := exec.Command(pipExec, "list", "--format=json")
@@ -100,11 +105,30 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 }
 
 func main() {
+	args := os.Args
 	root := "."
-	virtualEnvs, _ := findVirtualEnv(root)
-	fmt.Printf(virtualEnvs[0])
-	library, err := getInstalledLibraries(virtualEnvs[0])
-	if err == nil {
-		fmt.Printf("%v\n", library)
+	if len(args) > 1 {
+		root = args[1]
+		if len(args) > 2 {
+			if args[2] == "--debug" {
+				debugFlag = true
+			}
+		}
 	}
+
+	virtualEnvs, _ := findVirtualEnv(root)
+	library, err := getInstalledLibraries(virtualEnvs[0])
+
+	finalJSON, err := json.MarshalIndent(library, "", " ")
+	if err != nil {
+		fmt.Printf("Error Marshalling JSON: %v\n", err)
+	}
+	if debugFlag {
+		fmt.Printf("---SCAN COMPLETE\n---")
+	}
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, finalJSON, "", " "); err != nil {
+		fmt.Printf("Error Indenting JSON: %v\n", err)
+	}
+	fmt.Println(string(finalJSON))
 }
