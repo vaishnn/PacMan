@@ -37,3 +37,31 @@ main: |
       font-weight: bold;
       color: #FFFFFF;
   }
+  #buttonLocation {
+      background-color: #333333;
+      border-radius: 5px;
+      border: 1px solid #444444;
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: bold;
+  }
+  #buttonLocation:hover {
+      background-color: #444444;
+  }
+  #buttonLocation:pressed {
+      background-color: #555555;
+  }
+  #labelLocation {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: 0px solid #555555;
+    border-radius: 5px;
+    padding-left: 10px;
+    font-size: 13px;
+  }
+  #labelLocation:hover {
+    background-color: #444444;
+  }
+  #labelLocation:pressed {
+    background-color: #555555;
+  }

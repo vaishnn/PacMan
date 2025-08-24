@@ -1,9 +1,14 @@
 import sys
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QListWidget, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QLabel, QStackedWidget
+import subprocess
+from PyQt6.QtCore import Qt, QObject, pyqtSignal, QThread
+from PyQt6.QtWidgets import (
+    QApplication, QListWidget,
+    QMainWindow, QHBoxLayout, QVBoxLayout,
+    QWidget, QLabel, QStackedWidget, QFileDialog
+)
 import yaml
 
-def load_color_scheme(path="colorScheme.yaml"):
+def loadColorScheme(path="colorScheme.yaml"):
     try:
         with open(path, 'r') as file:
             return yaml.safe_load(file)
@@ -15,68 +20,130 @@ def load_color_scheme(path="colorScheme.yaml"):
         raise
 
 
+
+class GoWorker(QObject):
+    """
+    Worker class for executing GO programs
+    """
+    finished  = pyqtSignal(int, str, str)
+    def __init__(self, executablePath):
+        super().__init__()
+        self.executablePath = executablePath
+
+    def run(self):
+        try:
+            command = [self.executablePath]
+            result = subprocess.run(command, capture_output = True, text = True, check = False)
+            self.finished.emit(result.returncode, result.stdout, result.stderr)
+        except FileNotFoundError:
+            self.finished.emit(-1, "", "Executable Not Found")
+        except Exception as e:
+            self.finished.emit(-1, "", f"Some error idk {e}")
+
 class PacMan(QMainWindow):
     """
     Complete UI Will probably be implemented in here
     """
-    def __init__(self, color_scheme: dict):
+    def __init__(self, colorScheme: dict):
         super().__init__()
+        if sys.platform == "win32":
+            self.goExecutable = "./go_program.exe"
+        else:
+            self.goExecutable = "./go_program"
         self.setGeometry(100, 100, 800, 600)
         self.setMinimumSize(800, 600)
-        self.setStyleSheet(color_scheme['main'])
+        self.setStyleSheet(colorScheme['main'])
         # Main Layout
-        main_widget, main_layout = self.main_layout()
+        mainWidget, mainLayout = self.main_layout()
 
         # Add Side Bar
-        side_bar, self.nav_items = self.sideBar()
-        self.content_stack = self.createContentArea()
+        sideBar, self.navItems = self.sideBar()
+        self.contentStack = self.createContentArea()
 
-        main_layout.addWidget(side_bar)
-        main_layout.addWidget(self.content_stack, 1)
-        self.nav_items.currentRowChanged.connect(self.content_stack.setCurrentIndex)
-        self.setCentralWidget(main_widget)
+        mainLayout.addWidget(sideBar)
+        mainLayout.addWidget(self.contentStack, 1)
+        self.navItems.currentRowChanged.connect(self.contentStack.setCurrentIndex)
+        self.setCentralWidget(mainWidget)
+
+    def selectLocation(self, event):
+        directoryPath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        if directoryPath:
+            self.labelLocation.setText(f"{directoryPath}")
+            pass
 
     def main_layout(self):
-        main_widget = QWidget()
-        main_layout = QHBoxLayout(main_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-        return main_widget, main_layout
+        mainWidget = QWidget()
+        mainLayout = QHBoxLayout(mainWidget)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.setSpacing(0)
+        return mainWidget, mainLayout
 
     def sideBar(self):
-        side_bar = QWidget()
-        side_bar.setObjectName("sidebar")
-        side_bar.setFixedWidth(250)
-        side_bar_layout = QVBoxLayout(side_bar)
-        side_bar_layout.setContentsMargins(10, 10, 10, 10)
-        side_bar_layout.setSpacing(15)
+        sideBar = QWidget()
+        sideBar.setObjectName("sidebar")
+        sideBar.setFixedWidth(250)
+        sideBar_layout = QVBoxLayout(sideBar)
+        sideBar_layout.setContentsMargins(10, 10, 10, 10)
+        sideBar_layout.setSpacing(15)
 
-        nav_list = QListWidget()
-        nav_list.setObjectName("navList")
+        navList = QListWidget()
+        navList.setObjectName("navList")
         self.nav_lists = ["Libraries", "Analysis", "Dependency Tree", "Settings", "About"]
-        for nav_list_items in self.nav_lists:
-            nav_list.addItem(nav_list_items)
-        nav_list.setContentsMargins(0, 0, 0, 0)
-        nav_list.setSpacing(3)
+        for navListItems in self.nav_lists:
+            navList.addItem(navListItems)
+        navList.setContentsMargins(0, 0, 0, 0)
+        navList.setSpacing(3)
 
-        side_bar_layout.addWidget(nav_list)
+        sideBar_layout.addWidget(navList)
 
-        return side_bar, nav_list
+        return sideBar, navList
+
+    def startGoProgram(self):
+        self.thread = QThread()
+        self.worker = GoWorker(self.goExecutable)
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.handle_result)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.worker.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+        pass
+
+    def handle_result(self, returnCode: int, result: str, err: str):
+        print(result)
 
     def createContentArea(self):
-        content_stack = QStackedWidget()
-        content_stack.setObjectName("contentStack")
-        for item_text in self.nav_lists:
-            page = QWidget()
-            page_layout = QVBoxLayout(page)
-            page_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-            label = QLabel(f"This is the {item_text} Page")
-            page_layout.addWidget(label)
-            content_stack.addWidget(page)
+        contentStack = QStackedWidget()
+        contentStack.setObjectName("contentStack")
 
-        return content_stack
+        for index, item_text in enumerate(self.nav_lists):
+            page = QWidget()
+            pageLayout = QVBoxLayout(page)
+            pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+            if index == 0:
+                buttonLayout = QHBoxLayout()
+                self.labelLocation = QLabel("Select Location")
+                self.labelLocation.setObjectName("labelLocation")
+                self.labelLocation.setFixedSize(400, 30)
+                self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
+                self.labelLocation.mousePressEvent = self.selectLocation #type: ignore
+                buttonLayout.addWidget(self.labelLocation, 1)
+                pageLayout.addLayout(buttonLayout)
+
+            pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            label = QLabel(f"This is the {item_text} Page")
+            pageLayout.addWidget(label)
+            contentStack.addWidget(page)
+
+        return contentStack
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = PacMan(load_color_scheme())
+    window = PacMan(loadColorScheme())
     window.show()
     sys.exit(app.exec())
