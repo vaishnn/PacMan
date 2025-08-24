@@ -1,0 +1,39 @@
+main: |
+  QMainWindow, QWidget {
+      font-family: 'JetBrains Mono';
+  }
+  #sidebar {
+      background-color: #272321;
+  }
+  #contentArea {
+      background-color: #2D2D2D;
+  }
+  /* Navigation List */
+  #navList {
+      border: none;
+      background-color: #272321;
+  }
+  #navList::item {
+      padding: 10px;
+      color: #AAAAAA;
+      border-radius: 5px;
+  }
+  #navList::item:hover {
+      background-color: #3A3A3A;
+  }
+  #navList::item:selected {
+      background-color: #333333;
+      color: #FFFFFF;
+      font-weight: bold;
+  }
+  /* Supporter Box */
+  #supporterBox {
+      background-color: #333333;
+      border-radius: 8px;
+      border: 1px solid #444444;
+  }
+  #supporterBox QLabel {
+      font-size: 13px;
+      font-weight: bold;
+      color: #FFFFFF;
+  }
