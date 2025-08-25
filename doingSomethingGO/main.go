@@ -1,5 +1,9 @@
 package main
 
+// This GO program was just because I wanted to learn GO
+// I just found out it is much better to use pip inspect
+// or just pip list directly
+
 import (
 	"bytes"
 	"encoding/json"
@@ -90,10 +94,11 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 
 	var libraries []Library
 	for _, pkg := range pipPackages {
-		tag := "default"
+		tag := "installed"
 		if _, isDefault := defaultPackages[strings.ToLower(pkg.Name)]; isDefault {
 			tag = "default"
 		}
+
 		libraries = append(libraries, Library{
 			Name:    pkg.Name,
 			Version: pkg.Version,

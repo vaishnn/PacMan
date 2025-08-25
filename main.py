@@ -1,12 +1,11 @@
 import sys
-import subprocess
-from PyQt6.QtCore import Qt, QObject, pyqtSignal, QThread
 from PyQt6.QtWidgets import (
     QApplication, QListWidget, QListWidgetItem,
     QMainWindow, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QStackedWidget, QFileDialog
 )
-import json
+from PyQt6.QtCore import pyqtSignal, Qt
+from doingSomethingGO.goBrigde import ProgramRunner, GoWorker
 import yaml
 
 def loadColorScheme(path="colorScheme.yaml"):
@@ -20,28 +19,65 @@ def loadColorScheme(path="colorScheme.yaml"):
         print(f"Error loading color scheme file: {e}")
         raise
 
+
+class clickableLabel(QLabel):
+    # Needs to be Implemented Later
+    clicked = pyqtSignal()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mousePressEvent(self, event): #type: ignore
+        pass
+        self.clicked.emit()
+
 class library(QWidget):
     def __init__(self):
         super().__init__()
+        self.setObjectName("library")
         self.libraryLayout = QVBoxLayout(self)
-        self.libraryLayout.setContentsMargins(10, 10, 10, 10)
-        self.libraryLayout.setSpacing(3)
+        self.libraryLayout.setContentsMargins(5, 2, 2, 2)
+        # self.libraryLayout.setSpacing(0)
         self.libraryList = QListWidget()
         self.libraryList.setObjectName("libraryList")
-
+        # self.libraryList.setResizeMode(QListView.ResizeMode.Adjust)
         self.libraryLayout.addWidget(self.libraryList)
 
     def addItems(self, items):
         self.libraryList.clear()
         for item in items:
             listLibraryWidget = QWidget()
+            listLibraryWidget.setObjectName("listLibraryWidget")
+            listLibraryWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             listWidgetLayout = QHBoxLayout(listLibraryWidget)
+
+            # All the QLabels
+
+            # Name of the Library
             nameLibraryPanel = QLabel(item["name"])
+            nameLibraryPanel.setObjectName("nameLibraryPanel")
+
+            # Version of the Library
             versionLibraryPanel = QLabel(item["version"])
-            tagLibraryPanel = QLabel(item["tag"])
+            versionLibraryPanel.setObjectName("versionLibraryPanel")
+
+            # Tag of The Library
+            if item["tag"] == "installed":
+                tagLibraryPanel = QLabel("I")
+            else:
+                tagLibraryPanel = QLabel("D")
+            tagLibraryPanel.setMaximumWidth(25)
+            tagLibraryPanel.setObjectName("tagLibraryPanel")
+
+
+            # Changing Properties of QLabels
+
+
+            # Adding Widget in proper Order
+            listWidgetLayout.addWidget(tagLibraryPanel)
             listWidgetLayout.addWidget(nameLibraryPanel)
             listWidgetLayout.addWidget(versionLibraryPanel)
-            listWidgetLayout.addWidget(tagLibraryPanel)
+
             listItem = QListWidgetItem(self.libraryList)
             listItem.setSizeHint(listLibraryWidget.sizeHint())
             self.libraryList.addItem(listItem)
@@ -87,50 +123,6 @@ class about(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-class GoWorker(QObject):
-    """
-    Worker class for executing GO programs
-    """
-    finished  = pyqtSignal(int, str, str)
-    def __init__(self, executablePath, venvPath):
-        super().__init__()
-        self.executablePath = executablePath
-        self.venvPath = venvPath
-    def run(self):
-        try:
-            command = [self.executablePath, self.venvPath]
-            result = subprocess.run(command, capture_output = True, text = True, check = False)
-            self.finished.emit(result.returncode, result.stdout, result.stderr)
-        except FileNotFoundError:
-            self.finished.emit(-1, "", "Executable Not Found")
-        except Exception as e:
-            self.finished.emit(-1, "", f"Some error idk {e}")
-
-class ProgramRunner(QObject):
-    finished = pyqtSignal(list)
-    def __init__(self, executablePath):
-        super().__init__()
-        self.executablePath = executablePath
-        self.thread = None
-        self.worker = None
-
-    def startGOProgram(self, venvPath):
-        self.thread = QThread()
-        self.worker = GoWorker(self.executablePath, venvPath)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self._handleResults)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.finished.connect(self.thread.deleteLater)
-        self.thread.start()
-
-
-    def _handleResults(self, returnCode, stdout, stderr):
-        if returnCode == 0 and not stderr:
-            self.finished.emit(json.loads(stdout))
-        else:
-            pass
 
 class PacMan(QMainWindow):
     """
@@ -227,7 +219,6 @@ class PacMan(QMainWindow):
                 self.labelLocation.setObjectName("labelLocation")
                 self.labelLocationFinal = QLabel("Virtual Env:")
                 self.labelLocationFinal.setObjectName("labelLocationFinal")
-                # self.labelLocation.setFixedSize(400, 30)
                 self.labelLocation.setFixedHeight(30)
                 self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
                 self.labelLocation.mousePressEvent = self.selectLocation #type: ignore
@@ -236,9 +227,6 @@ class PacMan(QMainWindow):
                 pageLayout.addLayout(buttonLayout)
 
             pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-            # label = QLabel(f"This is the {item_text} Page")
-
             pageLayout.addWidget(label)
             contentStack.addWidget(page)
 

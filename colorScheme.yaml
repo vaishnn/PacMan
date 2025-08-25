@@ -5,7 +5,7 @@ main: |
   #sidebar {
       background-color: #272321;
   }
-  #contentArea {
+  #contentStack {
       background-color: #2D2D2D;
   }
   /* Navigation List */
@@ -26,31 +26,6 @@ main: |
       color: #FFFFFF;
       font-weight: bold;
   }
-  /* Supporter Box */
-  #supporterBox {
-      background-color: #333333;
-      border-radius: 8px;
-      border: 1px solid #444444;
-  }
-  #supporterBox QLabel {
-      font-size: 13px;
-      font-weight: bold;
-      color: #FFFFFF;
-  }
-  #buttonLocation {
-      background-color: #333333;
-      border-radius: 5px;
-      border: 1px solid #444444;
-      color: #FFFFFF;
-      font-size: 13px;
-      font-weight: bold;
-  }
-  #buttonLocation:hover {
-      background-color: #444444;
-  }
-  #buttonLocation:pressed {
-      background-color: #555555;
-  }
   #labelLocation {
     background-color: #3C3C3C;
     color: #AAAAAA;
@@ -58,6 +33,7 @@ main: |
     border: 0px solid #555555;
     border-radius: 5px;
     padding-left: 10px;
+    padding-right: 10px;
     font-size: 13px;
   }
   #labelLocation:hover {
@@ -68,11 +44,37 @@ main: |
   }
   #labelLocationFinal {
     color: #AAAAAA;
-    padding-left: 10px;
+    padding-left: 5px;
+    padding-right: 10px;
     font-size: 13px;
   }
   #libraryList {
+    background-color: #2D2D2D;
+    border-radius: 5px;
+
+  }
+  #libraryList::item {
+    background-color: #2D2D2D;
+    border-radius: 5px;
+
+  }
+  #libraryList::item:selected {
     background-color: #333333;
-    border-radius: 8px;
-    border: 1px solid #444444;
+    border-radius: 5px;
+  }
+  #libraryList::item:hover {
+    background-color: #444444;
+    border-radius: 5px;
+  }
+  #tagLibraryPanel {
+    font-style: italic;
+    color: #AAAAAA;
+    border-right: 1px solid #FFFFFF;
+  }
+  QToolTip {
+    background-color: #3C3C3C;
+    color: #AAAAAA;
+    border-radius: 5px;
+    padding: 5px;
+    font-size: 12px;
   }
