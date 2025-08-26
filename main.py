@@ -83,7 +83,7 @@ class PacMan(QMainWindow):
         self.programRunner = ProgramRunner(self.goExecutable)
         self.programRunner.finished.connect(self.handleListLibraries)
         self.contentDict = {
-            "Libraries": library(),
+            "Libraries": library(colorScheme['libraryListToolTip']),
             "Analysis": analysis(),
             "Dependency Tree": dependencyTree(),
             "Settings": setting(),
@@ -114,8 +114,9 @@ class PacMan(QMainWindow):
             self.programRunner.startGOProgram(directoryPath)
 
 
-    def handleListLibraries(self, libraries: list):
-        self.contentDict['Libraries'].libraryList.clear()
+    def handleListLibraries(self, pythonPath: str, libraries: list):
+        # self.contentDict['Libraries'].libraryList.clear()
+        self.contentDict['Libraries'].setPythonExecPath(pythonPath)
         self.contentDict['Libraries'].addItems(libraries)
 
     def main_layout(self):
@@ -145,9 +146,6 @@ class PacMan(QMainWindow):
         sideBarLayout.addWidget(navList)
 
         return sideBar, navList
-
-    def updateLibraries(self):
-        pass
 
     def createContentArea(self):
         contentStack = QStackedWidget()

@@ -1,11 +1,10 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem
 from PyQt6.QtCore import QObject, QThread, Qt, pyqtSignal, pyqtSlot, QEvent
 import subprocess
-import sys
-
-# Implementation of Better Layout and After Changing virtual Path it doesn't shows the Library Details
+# Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
 
 class hoverOverListLibraries(QListWidget):
+
     # Will be Implementing but don't really know how to implement it
     itemHovered = pyqtSignal(str)
     def __init__(self, parent = None):
@@ -20,23 +19,25 @@ class hoverOverListLibraries(QListWidget):
             item = self.itemAt(pos)
 
             if item:
-                itemText = item.text() #warning: ignore
-                print(itemText)
+                pass
 
 
 class library(QWidget):
     """
     This class is for all Library Related Widgets
     """
-    def __init__(self):
+    listLibraryRefreshed = pyqtSignal()
+    def __init__(self, colorScheme):
         super().__init__()
+        self.setStyleSheet(colorScheme)
         self.getLibraryDetails = getLibraryDetails()
         self.getLibraryDetails.detailsWithName.connect(self.getLibraryDetailsThroughClass)
         self.setObjectName("library")
+        self.pythonExecPath = ""
         self.libraryLayout = QVBoxLayout(self)
         self.libraryLayout.setContentsMargins(5, 2, 2, 2)
         # self.libraryLayout.setSpacing(0)
-
+        self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
         # This is for mapping Library Item names with their respective widgets
         self.itemMap = {}
 
@@ -45,9 +46,13 @@ class library(QWidget):
         # self.libraryList.setResizeMode(QListView.ResizeMode.Adjust)
         self.libraryLayout.addWidget(self.libraryList)
 
+    def setPythonExecPath(self, path):
+        self.pythonExecPath = path
+
     def addItems(self, items):
         self.libraryList.clear()
         self.itemMap.clear()
+
         for item in items:
             listLibraryWidget = QWidget()
             listLibraryWidget.setObjectName("listLibraryWidget")
@@ -86,21 +91,29 @@ class library(QWidget):
             self.libraryList.addItem(listItem)
             self.libraryList.setItemWidget(listItem, listLibraryWidget)
 
-            listItem.setToolTip("Loading details...")
-            self.itemMap[item["name"]] = listItem
-            self.getLibraryDetails.fetchDetailLibraryDetails(item["name"])
+            # listItem.setToolTip("Loading details...")
+            self.itemMap[item["name"]] = listLibraryWidget
+            # self.getLibraryDetails.fetchDetailLibraryDetails(item["name"])
+        self.listLibraryRefreshed.emit()
+
+
+    def startAllTooltipFetches(self):
+        for package_name, widget in self.itemMap.items():
+            widget.setToolTip("Fetching details...")
+            self.getLibraryDetails.fetchDetailLibraryDetails(self.pythonExecPath, package_name)
 
     @pyqtSlot(str, dict)
     def getLibraryDetailsThroughClass(self, name, libraryDetails: dict):
         listItem = self.itemMap.get(name)
         if listItem:
             tooltip = f"""
-            {libraryDetails["Summary"]} <br>
-            {libraryDetails['Home-page']} <br>
-            {libraryDetails['Author']} <br>
-            {libraryDetails['Requires']} <br>
-            {libraryDetails['Required-by']}
-            """
+            <p>
+            Summary: {libraryDetails["Summary"]} <br>
+            Home-page: {libraryDetails['Home-page']} <br>
+            Author: {libraryDetails['Author']} <br>
+            Requires: {libraryDetails['Requires']} <br>
+            Required-by: {libraryDetails['Required-by']}
+            </p>"""
             listItem.setToolTip(tooltip)
 
     def closeEvent(self, event): #type: ignore
@@ -108,9 +121,11 @@ class library(QWidget):
         super().closeEvent(event)
 
 
+
+
 class getLibraryDetails(QObject):
     detailsWithName = pyqtSignal(str, dict)
-    requestReady = pyqtSignal(str)
+    requestReady = pyqtSignal(str, str)
 
     def __init__(self, parent = None):
         super().__init__(parent)
@@ -119,11 +134,10 @@ class getLibraryDetails(QObject):
         self.requestReady.connect(self.worker.run)
         self.worker.moveToThread(self.threadRunner)
         self.worker.finished.connect(self.returnCommandOutput)
-        self.worker.finished.connect(self.worker.deleteLater)
         self.threadRunner.start()
 
-    def fetchDetailLibraryDetails(self, name):
-        self.requestReady.emit(name)
+    def fetchDetailLibraryDetails(self, pythonExecPath, name):
+        self.requestReady.emit(pythonExecPath, name)
 
     @pyqtSlot(str, int, bytes, bytes)
     def returnCommandOutput(self, name, returnCode, stdout, stderr):
@@ -135,7 +149,6 @@ class getLibraryDetails(QObject):
                 if ':' in item:
                     key, value = item.split(':', 1)
                     infoDict[key.strip()] = value.strip()
-            print(infoDict)
             self.detailsWithName.emit(name, infoDict)
 
     def stop(self):
@@ -147,8 +160,8 @@ class runCommandThroughPython(QObject):
     def __init__(self, parent = None):
         super().__init__(parent)
 
-    @pyqtSlot(str)
-    def run(self, commandRun):
-        command = [sys.executable,"-m", "pip", "show", commandRun]
+    @pyqtSlot(str, str)
+    def run(self, pythonExecPath, commandRun):
+        command = [pythonExecPath,"-m", "pip", "show", commandRun]
         result = subprocess.run(command, capture_output = True)
         self.finished.emit(commandRun, result.returncode, result.stdout, result.stderr)

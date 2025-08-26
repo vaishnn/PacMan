@@ -3,7 +3,7 @@ import subprocess
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 
 class ProgramRunner(QObject):
-    finished = pyqtSignal(list)
+    finished = pyqtSignal(str, list)
     def __init__(self, executablePath):
         super().__init__()
         self.executablePath = executablePath
@@ -24,7 +24,8 @@ class ProgramRunner(QObject):
 
     def _handleResults(self, returnCode, stdout, stderr):
         if returnCode == 0 and not stderr:
-            self.finished.emit(json.loads(stdout))
+            output = stdout.split("--|--")
+            self.finished.emit(output[0], json.loads(output[1]))
         else:
             pass
 
@@ -33,13 +34,14 @@ class GoWorker(QObject):
     """
     Worker class for executing GO programs
     """
-    finished  = pyqtSignal(int, str, str)
+    finished  = pyqtSignal( int, str, str)
     def __init__(self, executablePath, venvPath):
         super().__init__()
         self.executablePath = executablePath
         self.venvPath = venvPath
     def run(self):
         try:
+            print(self.venvPath)
             command = [self.executablePath, self.venvPath]
             result = subprocess.run(command, capture_output = True, text = True, check = False)
             self.finished.emit(result.returncode, result.stdout, result.stderr)

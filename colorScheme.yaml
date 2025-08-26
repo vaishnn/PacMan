@@ -71,10 +71,17 @@ main: |
     color: #AAAAAA;
     border-right: 1px solid #FFFFFF;
   }
-  QToolTip {
+   {
     background-color: #3C3C3C;
     color: #AAAAAA;
     border-radius: 5px;
     padding: 5px;
     font-size: 12px;
+  }
+libraryListToolTip: |
+  QToolTip {
+    background-color: #3C3C3C;
+    color: #AAAAAA;
+    padding: 5px;
+    font-size: 14px;
   }

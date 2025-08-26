@@ -1,4 +1,5 @@
 .venv
 .ropeproject
 __*
-.D*
+go_app
+*.exe

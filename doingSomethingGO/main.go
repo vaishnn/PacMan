@@ -64,7 +64,7 @@ func findVirtualEnv(root string) ([]string, error) {
 	return virtualEnvs, nil
 }
 
-func getInstalledLibraries(venvPath string) ([]Library, error) {
+func getInstalledLibraries(venvPath string) ([]Library, string, error) {
 	// I also need to implement the storage thingy
 	// Here we need to consider different systems windows & macOS or linux
 	// I'm currently on macOS
@@ -73,7 +73,7 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 		binpath = "Scripts"
 	}
 	pipExec := filepath.Join(venvPath, binpath, "pip")
-	// pythonExec := filepath.Join(venvPath, binpath, "python")
+	pythonExec := filepath.Join(venvPath, binpath, "python")
 
 	// siteCmd := exec.Command(pythonExec, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])")
 	// siteOutput, err := siteCmd.Output()
@@ -85,7 +85,7 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 	listCmd := exec.Command(pipExec, "list", "--format=json")
 	listOutput, err := listCmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("Error Getting Installed Libraries: %w", err)
+		return nil, "", fmt.Errorf("Error Getting Installed Libraries: %w", err)
 	}
 	var pipPackages []PipPackage
 	if err := json.Unmarshal(listOutput, &pipPackages); err != nil {
@@ -105,7 +105,7 @@ func getInstalledLibraries(venvPath string) ([]Library, error) {
 			Tag:     tag,
 		})
 	}
-	return libraries, nil
+	return libraries, pythonExec, nil
 
 }
 
@@ -122,7 +122,7 @@ func main() {
 	}
 
 	virtualEnvs, _ := findVirtualEnv(root)
-	library, err := getInstalledLibraries(virtualEnvs[0])
+	library, pythonExec, err := getInstalledLibraries(virtualEnvs[0])
 
 	finalJSON, err := json.MarshalIndent(library, "", " ")
 	if err != nil {
@@ -135,5 +135,6 @@ func main() {
 	if err := json.Indent(&prettyJSON, finalJSON, "", " "); err != nil {
 		fmt.Printf("Error Indenting JSON: %v\n", err)
 	}
-	fmt.Println(string(finalJSON))
+	outputToStdout := pythonExec + "--|--" + string(finalJSON) + "\n"
+	fmt.Println(outputToStdout)
 }
