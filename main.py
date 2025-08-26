@@ -1,11 +1,12 @@
 import sys
 from PyQt6.QtWidgets import (
-    QApplication, QListWidget, QListWidgetItem,
+    QApplication, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QStackedWidget, QFileDialog
 )
+from listWidgets.libraryListWidget import library
 from PyQt6.QtCore import pyqtSignal, Qt
-from doingSomethingGO.goBrigde import ProgramRunner, GoWorker
+from doingSomethingGO.goBrigde import ProgramRunner
 import yaml
 
 def loadColorScheme(path="colorScheme.yaml"):
@@ -31,61 +32,6 @@ class clickableLabel(QLabel):
         pass
         self.clicked.emit()
 
-class library(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setObjectName("library")
-        self.libraryLayout = QVBoxLayout(self)
-        self.libraryLayout.setContentsMargins(5, 2, 2, 2)
-        # self.libraryLayout.setSpacing(0)
-        self.libraryList = QListWidget()
-        self.libraryList.setObjectName("libraryList")
-        # self.libraryList.setResizeMode(QListView.ResizeMode.Adjust)
-        self.libraryLayout.addWidget(self.libraryList)
-
-    def addItems(self, items):
-        self.libraryList.clear()
-        for item in items:
-            listLibraryWidget = QWidget()
-            listLibraryWidget.setObjectName("listLibraryWidget")
-            listLibraryWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            listWidgetLayout = QHBoxLayout(listLibraryWidget)
-
-            # All the QLabels
-
-            # Name of the Library
-            nameLibraryPanel = QLabel(item["name"])
-            nameLibraryPanel.setObjectName("nameLibraryPanel")
-
-            # Version of the Library
-            versionLibraryPanel = QLabel(item["version"])
-            versionLibraryPanel.setObjectName("versionLibraryPanel")
-
-            # Tag of The Library
-            if item["tag"] == "installed":
-                tagLibraryPanel = QLabel("I")
-            else:
-                tagLibraryPanel = QLabel("D")
-            tagLibraryPanel.setMaximumWidth(25)
-            tagLibraryPanel.setObjectName("tagLibraryPanel")
-
-
-            # Changing Properties of QLabels
-
-
-            # Adding Widget in proper Order
-            listWidgetLayout.addWidget(tagLibraryPanel)
-            listWidgetLayout.addWidget(nameLibraryPanel)
-            listWidgetLayout.addWidget(versionLibraryPanel)
-
-            listItem = QListWidgetItem(self.libraryList)
-            listItem.setSizeHint(listLibraryWidget.sizeHint())
-            self.libraryList.addItem(listItem)
-            self.libraryList.setItemWidget(listItem, listLibraryWidget)
-
-
-
-        pass
 
 class analysis(QWidget):
     def __init__(self):
@@ -169,7 +115,6 @@ class PacMan(QMainWindow):
 
 
     def handleListLibraries(self, libraries: list):
-        print(10)
         self.contentDict['Libraries'].libraryList.clear()
         self.contentDict['Libraries'].addItems(libraries)
 
