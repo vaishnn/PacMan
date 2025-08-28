@@ -44,9 +44,22 @@ main: |
   }
   #labelLocationFinal {
     color: #AAAAAA;
-    padding-left: 5px;
+    font-size: 13px;
+  }
+  #searchBarInLibraryListWidget {
+    background-color: #242424;
+    color: #EEEEEE;
+    border: 0px solid #555555;
+    border-radius: 5px;
+    padding-left: 10px;
     padding-right: 10px;
     font-size: 13px;
+  }
+  #searchBarInLibraryListWidget:hover {
+    background-color: #444444;
+  }
+  #searchBarInLibraryListWidget:pressed {
+    background-color: #555555;
   }
   #libraryList {
     background-color: #2D2D2D;
@@ -71,17 +84,56 @@ main: |
     color: #AAAAAA;
     border-right: 1px solid #FFFFFF;
   }
-   {
-    background-color: #3C3C3C;
+  #versionLibraryPanel {
+    font-style: italic;
+    color: #AAAAAA;
+  }
+  #deleteButtonFromLibraryListWidget {
     color: #AAAAAA;
     border-radius: 5px;
+    border: none;
     padding: 5px;
     font-size: 12px;
+    }
+  #deleteButtonFromLibraryListWidget:hover {
+    background-color: #444444;
   }
+  #deleteButtonFromLibraryListWidget:pressed {
+    background-color: #555555;
+  }
+  """
+  QMessageBox {
+    background-color: #333;
+    border: 1px solid #555;
+  }
+
+  QMessageBox QLabel {
+    color: #FFF;
+    font-size: 16px;
+  }
+
+  QMessageBox QPushButton {
+    background-color: #007ACC;
+    color: white;
+    border-radius: 5px;
+    padding: 8px;
+    min-width: 80px;
+    font-size: 14px;
+  }
+
+  QMessageBox QPushButton:hover {
+    background-color: #005C99;
+  }
+
+  QMessageBox QPushButton:pressed {
+    background-color: #004C80;
+  }
+  """
 libraryListToolTip: |
   QToolTip {
     background-color: #3C3C3C;
     color: #AAAAAA;
+    border-radius: 5px;
     padding: 5px;
     font-size: 14px;
   }

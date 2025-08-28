@@ -3,3 +3,7 @@
 __*
 go_app
 *.exe
+chrome*
+dist
+build*
+website

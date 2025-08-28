@@ -1,25 +1,12 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem
-from PyQt6.QtCore import QObject, QThread, Qt, pyqtSignal, pyqtSlot, QEvent
-import subprocess
+from PyQt6.QtWidgets import QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
+from PyQt6.QtCore import QTimer, Qt, pyqtSignal, pyqtSlot, QSize
+from PyQt6.QtWidgets import QSizePolicy
+from worker.toolTipLibrary import getLibraryDetails
+from worker.deleteLibrary import uninstallManager
+from PyQt6.QtGui import QIcon
+
+# import qtawesome as qta
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
-
-class hoverOverListLibraries(QListWidget):
-
-    # Will be Implementing but don't really know how to implement it
-    itemHovered = pyqtSignal(str)
-    def __init__(self, parent = None):
-        super().__init__(parent)
-        self.toolTipCache = {}
-        self.lastHoveredItem = None
-        self.setMouseTracking(True)
-
-    def event(self, event: QEvent): #type: ignore
-        if event.type() == QEvent.Type.ToolTip:
-            pos = event.pos() #type: ignore
-            item = self.itemAt(pos)
-
-            if item:
-                pass
 
 
 class library(QWidget):
@@ -28,16 +15,50 @@ class library(QWidget):
     """
     listLibraryRefreshed = pyqtSignal()
     def __init__(self, colorScheme):
+        # I am only adding comments cause this code looks ugly
         super().__init__()
+        self.toolTipCache = {}
+        self.setObjectName("library")
         self.setStyleSheet(colorScheme)
+
+        # Setting up Tooltip Fetching
         self.getLibraryDetails = getLibraryDetails()
         self.getLibraryDetails.detailsWithName.connect(self.getLibraryDetailsThroughClass)
-        self.setObjectName("library")
+
+        # Setting up Uninstall Manager
+        self.uninstallManager = uninstallManager()
+        self.uninstallManager.uninstallFinished.connect(self.onUninstallFinished)
+
+
         self.pythonExecPath = ""
-        self.libraryLayout = QVBoxLayout(self)
-        self.libraryLayout.setContentsMargins(5, 2, 2, 2)
+        # For Main layout of the Library
+        self.libraryLayoutWithSearch = QVBoxLayout(self)
+        self.libraryLayoutWithSearch.setContentsMargins(5, 2, 2, 2)
+        self.libraryLayoutWithSearch.setSpacing(0)
+
+        # Search Bar
+        self.searchBarLibrary = QLineEdit()
+        self.searchBarLibrary.hide()
+        self.searchBarLibrary.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.searchBarLibrary.setFixedHeight(30)
+        self.searchBarLibrary.setPlaceholderText("Search for libraries")
+        self.searchBarLibrary.setText("")
+        self.searchBarLibrary.setObjectName("searchBarInLibraryListWidget")
+        self.searchBarLibrary.textChanged.connect(self.sortItemsList)
+        self.searchBarLibrary.textChanged.connect(self.ifTypingIsStillGoingOn)
+        self.searchBarTypingTimer = QTimer()
+        self.searchBarTypingTimer.setInterval(500)
+        self.searchBarTypingTimer.setSingleShot(True)
+        self.searchBarTypingTimer.timeout.connect(self.whenTimerForToolTipIsFinished)
+
+
+        self.libraryLayoutWithSearch.addWidget(self.searchBarLibrary)
+
+        # For library layout underneath search bar
+        self.libraryLayout = QVBoxLayout()
+        self.libraryLayoutWithSearch.addLayout(self.libraryLayout)
+        self.libraryLayout.setContentsMargins(0, 10, 0, 0)
         # self.libraryLayout.setSpacing(0)
-        self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
         # This is for mapping Library Item names with their respective widgets
         self.itemMap = {}
 
@@ -45,20 +66,60 @@ class library(QWidget):
         self.libraryList.setObjectName("libraryList")
         # self.libraryList.setResizeMode(QListView.ResizeMode.Adjust)
         self.libraryLayout.addWidget(self.libraryList)
+        self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
+
+    def ifTypingIsStillGoingOn(self):
+        if self.searchBarTypingTimer.isActive():
+            self.searchBarTypingTimer.stop()
+        self.searchBarTypingTimer.start(200)
+
+    def whenTimerForToolTipIsFinished(self):
+        self.listLibraryRefreshed.emit()
 
     def setPythonExecPath(self, path):
         self.pythonExecPath = path
 
-    def addItems(self, items):
+    def rankQuery(self, dataList, query):
+        """
+        Searches a list of dictionaries and sorts the results based on the
+        starting index of the query within the 'name' field.
+        """
+        lowerQuery = query.lower()
+        matches = [
+            item for item in dataList
+            if lowerQuery in item['name'].lower()
+        ]
+        sortedMatches = sorted(
+            matches,
+            key=lambda item: item['name'].lower().find(lowerQuery)
+        )
+        return sortedMatches
+
+    def addItems(self, itemsList):
+        self.toolTipCache = {}
+        self.searchBarLibrary.show()
+        self.all_items_data = itemsList
+        self.sortItemsList()
+
+    def sortItemsList(self):
+        self.searchBarLibrary.show()
+        query = self.searchBarLibrary.text()
+        items = []
+        if not query:
+            items = sorted(self.all_items_data, key=lambda x: x['name'])
+        else:
+            items = self.rankQuery(self.all_items_data, query)
+
+        # Clear the UI and re-populate it with the sorted list
         self.libraryList.clear()
         self.itemMap.clear()
 
         for item in items:
+
             listLibraryWidget = QWidget()
             listLibraryWidget.setObjectName("listLibraryWidget")
             listLibraryWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             listWidgetLayout = QHBoxLayout(listLibraryWidget)
-
             # All the QLabels
 
             # Name of the Library
@@ -74,32 +135,70 @@ class library(QWidget):
                 tagLibraryPanel = QLabel("I")
             else:
                 tagLibraryPanel = QLabel("D")
-            tagLibraryPanel.setMaximumWidth(25)
+            tagLibraryPanel.setFixedWidth(25)
             tagLibraryPanel.setObjectName("tagLibraryPanel")
 
 
             # Changing Properties of QLabels
+            uninstallButton = QPushButton()
+            uninstallButton.setFixedSize(30, 30)
+            uninstallButton.setObjectName("deleteButtonFromLibraryListWidget")
+            uninstallButton.setIcon(QIcon("icons/delete.png"))
+
 
 
             # Adding Widget in proper Order
             listWidgetLayout.addWidget(tagLibraryPanel)
             listWidgetLayout.addWidget(nameLibraryPanel)
             listWidgetLayout.addWidget(versionLibraryPanel)
-
+            listWidgetLayout.addWidget(uninstallButton)
             listItem = QListWidgetItem(self.libraryList)
-            listItem.setSizeHint(listLibraryWidget.sizeHint())
+            listItem.setSizeHint(QSize(0, 55))
             self.libraryList.addItem(listItem)
             self.libraryList.setItemWidget(listItem, listLibraryWidget)
 
-            # listItem.setToolTip("Loading details...")
-            self.itemMap[item["name"]] = listLibraryWidget
+            if item["name"] in self.toolTipCache:
+                listLibraryWidget.setToolTip(self.toolTipCache[item["name"]])
+            else:
+                # Optional: set a default tooltip while waiting for data
+                listLibraryWidget.setToolTip("Loading details...")
+            self.itemMap[item["name"]] = (listLibraryWidget, listItem)
+            uninstallButton.clicked.connect(lambda checked  = False, packageName = item["name"]: self.startLibraryUninstaller(packageName))
             # self.getLibraryDetails.fetchDetailLibraryDetails(item["name"])
-        self.listLibraryRefreshed.emit()
+        # self.listLibraryRefreshed.emit()
+
+    def startLibraryUninstaller(self, packageName):
+        reply = QMessageBox.warning(
+            self,
+            'Confirm Uninstall',
+            f"Uninstalling {packageName}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            if packageName in self.itemMap:
+                widget = self.itemMap[packageName][0]
+                widget.setToolTip("Uninstalling...")
+            print(packageName)
+            self.uninstallManager.requestUninstall(self.pythonExecPath, packageName)
+
+    def searchItemsInTheLibrary(self):
+        pass
+
+
+    @pyqtSlot(str, bool)
+    def onUninstallFinished(self, packageName, success):
+        if success:
+            listItem = self.itemMap.pop(packageName)
+            if listItem:
+                row = self.libraryList.row(listItem[1])
+                self.libraryList.takeItem(row)
+
 
 
     def startAllTooltipFetches(self):
         for package_name, widget in self.itemMap.items():
-            widget.setToolTip("Fetching details...")
+            widget[0].setToolTip("Fetching details...")
             self.getLibraryDetails.fetchDetailLibraryDetails(self.pythonExecPath, package_name)
 
     @pyqtSlot(str, dict)
@@ -108,60 +207,15 @@ class library(QWidget):
         if listItem:
             tooltip = f"""
             <p>
-            Summary: {libraryDetails["Summary"]} <br>
-            Home-page: {libraryDetails['Home-page']} <br>
-            Author: {libraryDetails['Author']} <br>
-            Requires: {libraryDetails['Requires']} <br>
-            Required-by: {libraryDetails['Required-by']}
+            <b>Summary:</b> {libraryDetails["Summary"]} <br>
+            <b>Author:</b> {libraryDetails['Author']} <br>
+            <b>Requires:</b> {libraryDetails['Requires']} <br>
+            <b>Required-by:</b> {libraryDetails['Required-by']}
             </p>"""
-            listItem.setToolTip(tooltip)
+            listItem[0].setToolTip(tooltip)
+            self.toolTipCache[name] = tooltip
 
     def closeEvent(self, event): #type: ignore
         self.getLibraryDetails.stop()
+        self.uninstallManager.stop()
         super().closeEvent(event)
-
-
-
-
-class getLibraryDetails(QObject):
-    detailsWithName = pyqtSignal(str, dict)
-    requestReady = pyqtSignal(str, str)
-
-    def __init__(self, parent = None):
-        super().__init__(parent)
-        self.threadRunner = QThread()
-        self.worker = runCommandThroughPython()
-        self.requestReady.connect(self.worker.run)
-        self.worker.moveToThread(self.threadRunner)
-        self.worker.finished.connect(self.returnCommandOutput)
-        self.threadRunner.start()
-
-    def fetchDetailLibraryDetails(self, pythonExecPath, name):
-        self.requestReady.emit(pythonExecPath, name)
-
-    @pyqtSlot(str, int, bytes, bytes)
-    def returnCommandOutput(self, name, returnCode, stdout, stderr):
-        if returnCode == 0 and not stderr:
-            # Convert byte to string
-            stdout = stdout.decode('utf-8')
-            infoDict = {}
-            for item in stdout.split('\n'):
-                if ':' in item:
-                    key, value = item.split(':', 1)
-                    infoDict[key.strip()] = value.strip()
-            self.detailsWithName.emit(name, infoDict)
-
-    def stop(self):
-        self.threadRunner.quit()
-        self.threadRunner.wait()
-
-class runCommandThroughPython(QObject):
-    finished = pyqtSignal(str, int, bytes, bytes)
-    def __init__(self, parent = None):
-        super().__init__(parent)
-
-    @pyqtSlot(str, str)
-    def run(self, pythonExecPath, commandRun):
-        command = [pythonExecPath,"-m", "pip", "show", commandRun]
-        result = subprocess.run(command, capture_output = True)
-        self.finished.emit(commandRun, result.returncode, result.stdout, result.stderr)

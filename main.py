@@ -1,4 +1,5 @@
 import sys
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
@@ -76,12 +77,24 @@ class PacMan(QMainWindow):
     """
     def __init__(self, colorScheme: dict):
         super().__init__()
+        # Idk what even is this for
+        self.setObjectName("PacMan")
+
+        # This doesnot work
+        self.setWindowIcon(QIcon("icons/delete.png"))
+
+        # I am on mac and never tested on windows Yet
         if sys.platform == "win32":
             self.goExecutable = "./go_app.exe"
         else:
             self.goExecutable = "./go_app"
+
+        # Runner classes for GO Program, only made because I wanted to learn GO
+        # This just fetched libraries present in the virtual env
+        # Have to implement something where pip is not used (very few cases)
         self.programRunner = ProgramRunner(self.goExecutable)
         self.programRunner.finished.connect(self.handleListLibraries)
+
         self.contentDict = {
             "Libraries": library(colorScheme['libraryListToolTip']),
             "Analysis": analysis(),
