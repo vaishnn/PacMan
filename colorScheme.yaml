@@ -61,10 +61,40 @@ main: |
   #searchBarInLibraryListWidget:pressed {
     background-color: #555555;
   }
+  #searchBarInstaller {
+    background-color: #242424;
+    color: #EEEEEE;
+    border: 0px solid #555555;
+    border-radius: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 13px;
+  }
+  #searchBarInstaller:hover {
+    background-color: #444444;
+  }
+  #searchBarInstaller:pressed {
+    background-color: #555555;
+  }
+  #libraryListViewInstaller{
+    background-color: #2D2D2D;
+    border-radius: 5px;
+  }
+  #libraryListViewInstaller::item {
+    background-color: #2D2D2D;
+    border-radius: 5px;
+  }
+  #libraryListViewInstaller::item:selected {
+    background-color: #333333;
+    border-radius: 5px;
+  }
+  #libraryListViewInstaller::item:hover {
+    background-color: #444444;
+    border-radius: 5px;
+  }
   #libraryList {
     background-color: #2D2D2D;
     border-radius: 5px;
-
   }
   #libraryList::item {
     background-color: #2D2D2D;

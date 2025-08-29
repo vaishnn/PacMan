@@ -5,10 +5,13 @@ from PyQt6.QtWidgets import (
     QMainWindow, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QStackedWidget, QFileDialog
 )
-from listWidgets.libraryListWidget import library
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import Qt
 from doingSomethingGO.goBrigde import ProgramRunner
+from library.libraryListWidget import Library
+from Installer.widgetToInstallLibrary import Installer
 import yaml
+
+
 
 def loadColorScheme(path="colorScheme.yaml"):
     try:
@@ -22,19 +25,7 @@ def loadColorScheme(path="colorScheme.yaml"):
         raise
 
 
-class clickableLabel(QLabel):
-    # Needs to be Implemented Later
-    clicked = pyqtSignal()
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-    def mousePressEvent(self, event): #type: ignore
-        pass
-        self.clicked.emit()
-
-
-class analysis(QWidget):
+class Analysis(QWidget):
     def __init__(self):
         super().__init__()
         self.mainLayout = QVBoxLayout()
@@ -43,7 +34,8 @@ class analysis(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-class dependencyTree(QWidget):
+
+class DependencyTree(QWidget):
     def __init__(self):
         super().__init__()
         self.mainLayout = QVBoxLayout()
@@ -52,7 +44,8 @@ class dependencyTree(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-class setting(QWidget):
+
+class Setting(QWidget):
     def __init__(self):
         super().__init__()
         self.mainLayout = QVBoxLayout()
@@ -61,7 +54,8 @@ class setting(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-class about(QWidget):
+
+class About(QWidget):
     def __init__(self):
         super().__init__()
         self.mainLayout = QVBoxLayout()
@@ -75,6 +69,7 @@ class PacMan(QMainWindow):
     """
     Complete UI Will probably be implemented in here
     """
+
     def __init__(self, colorScheme: dict):
         super().__init__()
         # Idk what even is this for
@@ -96,11 +91,12 @@ class PacMan(QMainWindow):
         self.programRunner.finished.connect(self.handleListLibraries)
 
         self.contentDict = {
-            "Libraries": library(colorScheme['libraryListToolTip']),
-            "Analysis": analysis(),
-            "Dependency Tree": dependencyTree(),
-            "Settings": setting(),
-            "About": about()
+            "Libraries": Library(colorScheme['libraryListToolTip']),
+            "Installer": Installer(),
+            "Analysis": Analysis(),
+            "Dependency Tree": DependencyTree(),
+            "Settings": Setting(),
+            "About": About()
         }
         self.libraries = {}
         self.navLists = list(self.contentDict.keys())
@@ -117,15 +113,16 @@ class PacMan(QMainWindow):
 
         mainLayout.addWidget(sideBar)
         mainLayout.addWidget(self.contentStack, 1)
-        self.navItems.currentRowChanged.connect(self.contentStack.setCurrentIndex)
+        self.navItems.currentRowChanged.connect(
+            self.contentStack.setCurrentIndex)
         self.setCentralWidget(mainWidget)
 
     def selectLocation(self, event):
-        directoryPath = QFileDialog.getExistingDirectory(self, "Select Directory")
+        directoryPath = QFileDialog.getExistingDirectory(
+            self, "Select Directory")
         if directoryPath:
             self.labelLocation.setText(f"{directoryPath}")
             self.programRunner.startGOProgram(directoryPath)
-
 
     def handleListLibraries(self, pythonPath: str, libraries: list):
         # self.contentDict['Libraries'].libraryList.clear()
@@ -171,13 +168,14 @@ class PacMan(QMainWindow):
             label = self.contentDict[item_text]
             if index == 0:
                 buttonLayout = QHBoxLayout()
+                buttonLayout.setContentsMargins(0, 0, 0, 0)
                 self.labelLocation = QLabel("Select Path")
                 self.labelLocation.setObjectName("labelLocation")
                 self.labelLocationFinal = QLabel("Virtual Env:")
                 self.labelLocationFinal.setObjectName("labelLocationFinal")
                 self.labelLocation.setFixedHeight(30)
                 self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
-                self.labelLocation.mousePressEvent = self.selectLocation #type: ignore
+                self.labelLocation.mousePressEvent = self.selectLocation  # type: ignore
                 buttonLayout.addWidget(self.labelLocationFinal)
                 buttonLayout.addWidget(self.labelLocation, 1)
                 pageLayout.addLayout(buttonLayout)
@@ -187,6 +185,7 @@ class PacMan(QMainWindow):
             contentStack.addWidget(page)
 
         return contentStack
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
