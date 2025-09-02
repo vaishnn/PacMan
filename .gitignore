@@ -6,5 +6,4 @@ go_app
 chrome*
 dist
 build*
-website
 .DS_Store

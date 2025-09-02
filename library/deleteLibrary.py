@@ -1,11 +1,11 @@
 from PyQt6.QtCore import QThread, QTimer, pyqtSignal, pyqtSlot, QObject
 import subprocess
 
-class uninstallManager(QObject):
+class UninstallManager(QObject):
 
     uninstallFinished = pyqtSignal(str, bool)
     _executeInstaller = pyqtSignal(str, str)
-    def __init__(self, parent = None):
+    def __init__(self, config: dict, parent = None):
         super().__init__(parent)
 
         self.IDLE_TIMOUT = 30000

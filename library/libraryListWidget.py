@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListW
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
 from library.toolTipLibrary import getLibraryDetails
-from library.deleteLibrary import uninstallManager
+from library.deleteLibrary import UninstallManager
 from PyQt6.QtGui import QIcon
 
 # import qtawesome as qta
@@ -21,13 +21,13 @@ class Library(QWidget):
     """
     listLibraryRefreshed = pyqtSignal()
 
-    def __init__(self, colorScheme, config: dict = {}):
+    def __init__(self, config: dict = {}):
         # I am only adding comments cause this code looks ugly
         super().__init__()
         self.config = config
         self.toolTipCache = {}
         self.setObjectName("library")
-        self.setStyleSheet(colorScheme)
+        self.setStyleSheet(self.config.get("stylesheet", {}).get("libraryListToolTip", ""))
 
         # Setting up Tooltip Fetching
         self.getLibraryDetails = getLibraryDetails()
@@ -35,7 +35,7 @@ class Library(QWidget):
             self.getLibraryDetailsThroughClass)
 
         # Setting up Uninstall Manager
-        self.uninstallManager = uninstallManager()
+        self.uninstallManager = UninstallManager(config = self.config)
         self.uninstallManager.uninstallFinished.connect(
             self.onUninstallFinished)
 

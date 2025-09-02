@@ -56,15 +56,18 @@ class About(QWidget):
 
 class PacMan(QMainWindow):
     """
-    Complete UI Will probably be implemented in here
+    Main Window of the Application
+    - What someone can do with it, You can start it
     """
 
-    def __init__(self, colorScheme: dict, config: dict = {}):
+    def __init__(self, config: dict = {}):
         super().__init__()
         self.setFont
         self.config = config
-        # Idk what even is this for
-        self.setObjectName("PacMan")
+
+        # Getting Data from the config file
+        self.appName = self.config.get("application", {}).get("appName", "PacMan")
+        self.setObjectName("PacMan") # May this serve some purpose in the future
 
         # This doesnot work
         self.setWindowIcon(QIcon("icons/delete.png"))
@@ -82,7 +85,7 @@ class PacMan(QMainWindow):
         self.programRunner.finished.connect(self.handleListLibraries)
 
         self.contentDict = {
-            "Libraries": Library(colorScheme['libraryListToolTip'], self.config),
+            "Libraries": Library(self.config),
             "Installer": Installer(self.config),
             "Analysis": Analysis(),
             "Dependency Tree": DependencyTree(),
@@ -180,13 +183,15 @@ class PacMan(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
     configFilePath = "config.yaml"
-    colorSchemePath = "colorScheme.yaml"
-    config = loadYaml(configFilePath)
+
+    config: dict = loadYaml(configFilePath)
+    app.applicationVersion = config.get("application", {}).get("version", "")
     font = loadFont(
-        config.get("fonts", [])[0],
-        config.get("font_size", 14))
+        config.get("paths", {}).get("fonts", ""),
+        config.get("application", {}).get("fontSize", 14))
     app.setFont(font)
-    window = PacMan(loadYaml(colorSchemePath))
+    window = PacMan(config)
     window.show()
     sys.exit(app.exec())

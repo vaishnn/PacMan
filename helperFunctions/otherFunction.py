@@ -18,7 +18,7 @@ def loadYaml(path: str) -> dict:
         print(f"Error loading config file: {e}")
         return {}
 
-def loadFont(fontPath: str, fontSize: int = 12) -> QFont:
+def loadFont(fontPath: str, fontSize: int = 14) -> QFont:
     # This method is not working for relative paths, so currently using absolute paths
     try:
         scriptDir = os.path.dirname(os.path.abspath(__file__))
