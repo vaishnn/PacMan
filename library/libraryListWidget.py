@@ -149,6 +149,7 @@ class Library(QWidget):
             uninstallButton.setFixedSize(30, 30)
             uninstallButton.setObjectName("deleteButtonFromLibraryListWidget")
             uninstallButton.setIcon(QIcon("icons/delete.png"))
+            uninstallButton.setIconSize(QSize(21, 21))
 
             # Adding Widget in proper Order
             listWidgetLayout.addWidget(tagLibraryPanel)

@@ -1,0 +1,7 @@
+API_ENDPOINTS:
+  pypi:
+    library_details: https://pypi.org/pypi/{package}/json
+
+font_size: 14
+fonts:
+  - fonts/Figtree/static/Figtree_Light.ttf

@@ -1,6 +1,5 @@
 main: |
   QMainWindow, QWidget {
-      font-family: 'JetBrains Mono';
   }
   #sidebar {
       background-color: #272321;

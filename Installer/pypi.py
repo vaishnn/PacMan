@@ -39,11 +39,14 @@ def loadData(appName = "PacMan", fileName = "libraryList.txt") -> list:
         if os.path.exists(filePath):
             with open(filePath, "r") as file:
                 data = file.read().splitlines()
+
         else:
             data = downloadDataFromPyPi(appName, fileName)
     except Exception as e:
         data = []
         print(f"Error loading data: {e}")
+    if data:
+        data = [{"name": name} for name in data]
     return data
 
 class PyPiRunner(QObject):

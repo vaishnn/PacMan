@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QFontDatabase, QFont
 from PyQt6.QtWidgets import (
     QApplication, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
@@ -10,8 +10,31 @@ from doingSomethingGO.goBrigde import ProgramRunner
 from library.libraryListWidget import Library
 from Installer.widgetToInstallLibrary import Installer
 import yaml
+import os
 
+def loadConfig(path: str) -> dict:
+    try:
+        with open(path, 'r') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        print(f"Config file not found at {path}")
+        return {}
+    except Exception as e:
+        print(f"Error loading config file: {e}")
+        return {}
 
+def loadFont(fontPath: str, fontSize: int = 12) -> QFont:
+    # This method is not working for relative paths, so currently using absolute paths
+    try:
+        scriptDir = os.path.dirname(os.path.abspath(__file__))
+        fontId = QFontDatabase.addApplicationFont(
+            os.path.join(scriptDir, fontPath))
+        print(fontId)
+        font = QFont(QFontDatabase.applicationFontFamilies(fontId)[0], fontSize)
+        return font
+    except Exception as e:
+        print(f"Error loading font: {e}")
+        return QFont("Arial", fontSize)
 
 def loadColorScheme(path="colorScheme.yaml"):
     try:
@@ -72,6 +95,7 @@ class PacMan(QMainWindow):
 
     def __init__(self, colorScheme: dict):
         super().__init__()
+        self.setFont
         # Idk what even is this for
         self.setObjectName("PacMan")
 
@@ -189,6 +213,11 @@ class PacMan(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    config = loadConfig("config.yaml")
+    font = loadFont(
+        config.get("fonts", [])[0],
+        config.get("font_size", 12))
+    app.setFont(font)
     window = PacMan(loadColorScheme())
     window.show()
     sys.exit(app.exec())
