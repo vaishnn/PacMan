@@ -4,6 +4,8 @@ package main
 // I just found out it is much better to use pip inspect
 // or just pip list directly
 
+// No Longer Being Used
+
 import (
 	"bytes"
 	"encoding/json"

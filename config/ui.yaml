@@ -1,0 +1,246 @@
+# All user interface settings
+ui:
+  window:
+    minSize: [800, 330]
+    geometry: [100, 100, 800, 600]
+    mainLayout:
+      contentsMargin: [0, 0, 0, 0]
+      spacing: 0
+    sideBar:
+      minWidth: 100
+      maxWidth: 200
+      contentMargins: [10, 10, 10, 10]
+      spacing: 15
+      navListContentMargin: [0, 0, 0, 0]
+      navListSpacing: 3
+    library:
+      locationLayout:
+        contentMargin: [0, 0, 0, 0]
+      labelLocation:
+        contentMargin: [0, 0, 0, 0]
+    installer:
+      contentMargin: [0, 0, 0, 0]
+      roundedCornerRadius: 8
+
+  # Sizing, spacing, and radius values
+  dimensions:
+    fontSize:
+      mainFont: 14
+      small: "12px"
+      default: "13px"
+      medium: "14px"
+      large: "16px"
+    borderRadius:
+      small: "4px"
+      medium: "5px"
+      large: "10px"
+      circle: "6px"
+    padding:
+      small: "5px"
+      medium: "8px"
+      large: "10px"
+
+  # Color palette
+  colors:
+    primary: "#007bff"
+    secondary: "#6c757d"
+    success: "#28a745"
+    danger: "#dc3545"
+    warning: "#ffc107"
+    info: "#17a2b8"
+
+    background:
+      main: "#2D2D2D"
+      sidebar: "#272321"
+      content: "#383838"
+      input: "#242424"
+      inputSecondary: "#4A4A4A"
+      hover: "#444444"
+      pressed: "#555555"
+      selected: "#333333"
+    text:
+      normal: "#EEEEEE"
+      muted: "#AAAAAA"
+      bright: "#FFFFFF"
+    border:
+      light: "#555555"
+      dark: "#3C3C3C"
+    button:
+      primary: "#007ACC"
+      primaryHover: "#005C99"
+      primaryPressed: "#004C80"
+      install: "#E5E5E5"
+    trafficLight:
+      close: "#FF605C"
+      minimize: "#FFBD44"
+      maximize: "#00CA4E"
+
+# Stylesheets referencing variables above
+stylesheet:
+  main: |
+    #mainWindowContainer {
+      background-color: {{ ui.colors.background.main }};
+      border: 1px solid {{ ui.colors.border.light }};
+      border-radius: {{ ui.dimensions.borderRadius.large }};
+    }
+    #nameLabel {
+      color: {{ ui.colors.text.muted }};
+      font-size: {{ ui.dimensions.fontSize.small }};
+    }
+    #library, #dependencyTree, #setting, #about, #analysis, #controlBar {
+      background-color: {{ ui.colors.background.content }};
+      border-top-right-radius: {{ ui.dimensions.borderRadius.large }};
+      border-bottom-right-radius: {{ ui.dimensions.borderRadius.large }};
+    }
+    #sideBar {
+      background-color: {{ ui.colors.background.sidebar }};
+      border-top-left-radius: {{ ui.dimensions.borderRadius.large }};
+      border-bottom-left-radius: {{ ui.dimensions.borderRadius.large }};
+    }
+    #contentStack {
+      background-color: {{ ui.colors.background.main }};
+      border-top-right-radius: {{ ui.dimensions.borderRadius.large }};
+      border-bottom-right-radius: {{ ui.dimensions.borderRadius.large }};
+    }
+    #closeButton {
+      background-color: {{ ui.colors.trafficLight.close }};
+      border-radius: {{ ui.dimensions.borderRadius.circle }};
+      border: none;
+    }
+    #minimizeButton {
+      background-color: {{ ui.colors.trafficLight.minimize }};
+      border-radius: {{ ui.dimensions.borderRadius.circle }};
+      border: none;
+    }
+    #maximizeButton {
+      background-color: {{ ui.colors.trafficLight.maximize }};
+      border-radius: {{ ui.dimensions.borderRadius.circle }};
+      border: none;
+    }
+    #navList {
+      border: none;
+      background-color: {{ ui.colors.background.sidebar }};
+    }
+    #navList::item {
+      padding: {{ ui.dimensions.padding.large }};
+      color: {{ ui.colors.text.muted }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+    }
+    #navList::item:hover {
+      background-color: {{ ui.colors.background.hover }};
+    }
+    #navList::item:selected {
+      background-color: {{ ui.colors.background.selected }};
+      color: {{ ui.colors.text.bright }};
+      font-weight: bold;
+    }
+    #labelLocation {
+      background-color: {{ ui.colors.border.dark }};
+      color: {{ ui.colors.text.muted }};
+      border: 0px solid {{ ui.colors.border.light }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding-left: {{ ui.dimensions.padding.large }};
+      padding-right: {{ ui.dimensions.padding.large }};
+      font-size: {{ ui.dimensions.fontSize.default }};
+      font-style: italic;
+    }
+    #labelLocation:hover { background-color: {{ ui.colors.background.hover }}; }
+    #labelLocation:pressed { background-color: {{ ui.colors.background.pressed }}; }
+    #labelLocationFinal {
+      color: {{ ui.colors.text.muted }};
+      font-size: {{ ui.dimensions.fontSize.default }};
+    }
+    #searchBarInLibraryListWidget, #searchBarInstaller, #customVirtualName {
+      background-color: {{ ui.colors.background.input }};
+      color: {{ ui.colors.text.normal }};
+      border: none;
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding: {{ ui.dimensions.padding.small }};
+      font-size: {{ ui.dimensions.fontSize.default }};
+    }
+    #searchBarInLibraryListWidget:hover, #searchBarInstaller:hover { background-color: {{ ui.colors.background.hover }}; }
+    #searchBarInLibraryListWidget:pressed, #searchBarInstaller:pressed { background-color: {{ ui.colors.background.pressed }}; }
+    #libraryListViewInstaller, #libraryList {
+      background-color: {{ ui.colors.background.main }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+    }
+    #libraryListViewInstaller::item, #libraryList::item {
+      background-color: {{ ui.colors.background.main }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+    }
+    #libraryListViewInstaller::item:selected { background-color: {{ ui.colors.background.selected }}; }
+    #libraryListViewInstaller::item:hover, #libraryList::item:hover { background-color: {{ ui.colors.background.hover }}; }
+    #sizeLibraryPanel {
+      color: {{ ui.colors.text.muted }};
+      border-right: 1px solid {{ ui.colors.text.bright }};
+    }
+    #versionLibraryPanel {
+      font-style: italic;
+      color: {{ ui.colors.text.muted }};
+    }
+    #deleteButtonFromLibraryListWidget {
+      color: {{ ui.colors.text.muted }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      border: none;
+      padding: 2px;
+      font-size: {{ ui.dimensions.fontSize.small }};
+    }
+    #deleteButtonFromLibraryListWidget:hover { background-color: {{ ui.colors.background.hover }}; }
+    #deleteButtonFromLibraryListWidget:pressed { background-color: {{ ui.colors.background.pressed }}; }
+    QMessageBox {
+      background-color: {{ ui.colors.background.selected }};
+      border: 1px solid {{ ui.colors.border.light }};
+    }
+    QMessageBox QLabel {
+      color: {{ ui.colors.text.bright }};
+      font-size: {{ ui.dimensions.fontSize.large }};
+    }
+    QMessageBox QPushButton, #useSelectingVirtualEnvButton, #createVirtualEnvButton {
+      background-color: {{ ui.colors.button.primary }};
+      color: {{ ui.colors.text.bright }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding: {{ ui.dimensions.padding.medium }};
+      min-width: 80px;
+      font-size: {{ ui.dimensions.fontSize.medium }};
+    }
+    QMessageBox QPushButton:hover, #useSelectingVirtualEnvButton:hover, #createVirtualEnvButton:hover { background-color: {{ ui.colors.button.primaryHover }}; }
+    QMessageBox QPushButton:pressed, #useSelectingVirtualEnvButton:pressed, #createVirtualEnvButton:pressed { background-color: {{ ui.colors.button.primaryPressed }}; }
+    #browseLabel, #selectEnv {
+      background-color: {{ ui.colors.background.content }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      color: {{ ui.colors.text.normal }};
+    }
+    #onboardingWidget QComboBox, #OnboardingWidget QLineEdit, QTextEdit {
+      background-color: {{ ui.colors.background.inputSecondary }};
+      color: {{ ui.colors.text.normal }};
+      border-radius: {{ ui.dimensions.borderRadius.small }};
+      padding: {{ ui.dimensions.padding.small }};
+    }
+    QComboBox {
+      border: none;
+      background: transparent;
+      padding-right: 5px; /* Remove space for arrow */
+    }
+    QComboBox::drop-down {
+      border: none;
+      background: transparent;
+      width: 20px; /* Hide the drop-down button */
+    }
+    QComboBox::down-arrow {
+      image: url(./icons/fold.svg);
+    }
+
+  initScreen: |
+    #container {
+      background-color: {{ ui.colors.background.main }};
+      border: 1px solid {{ ui.colors.border.light }};
+      border-radius: {{ ui.dimensions.borderRadius.large }};
+    }
+  tooltip: |
+    QToolTip {
+      background-color: {{ ui.colors.border.dark }};
+      color: {{ ui.colors.text.muted }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding: {{ ui.dimensions.padding.small }};
+      font-size: {{ ui.dimensions.fontSize.medium }};
+    }

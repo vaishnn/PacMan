@@ -1,0 +1,6 @@
+# Control parameters and timeouts
+controls:
+  library:
+    uninstallManagerTimout: 10000
+  installer:
+    detailsTimeout: 1000

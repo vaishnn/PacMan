@@ -1,0 +1,82 @@
+/*
+ * style.css
+ * This file contains custom styles for the PacMan website.
+ * It complements the Tailwind CSS utility classes used in the HTML.
+ */
+
+/* Smooth scrolling behavior for anchor links */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom body styles for better typography */
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Adding a subtle, neutral gradient to the hero section for depth */
+#home {
+    background: radial-gradient(
+        ellipse at bottom,
+        rgba(128, 128, 128, 0.1) 0%,
+        rgba(10, 10, 20, 0) 60%
+    );
+}
+
+/* Animation for sections to fade in on scroll */
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+        opacity 0.6s ease-out,
+        transform 0.6s ease-out;
+}
+
+.fade-in-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Style for the header to have a bottom border */
+header {
+    border-bottom: 1px solid rgba(74, 85, 104, 0.2);
+}
+
+/* Custom styles for feature cards for a nice hover effect */
+.grid .bg-gray-800 {
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+/* Updated hover effect to use a neutral gray glow, matching the app's style */
+.grid .bg-gray-800:hover {
+    transform: translateY(-8px);
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04),
+        0 0 0 1px rgba(156, 163, 175, 0.2);
+}
+
+/*
+ * Overriding button and section colors to match the app's monochromatic aesthetic.
+ * This targets the Tailwind classes used in the HTML to remove the cyan accent color.
+ */
+.bg-cyan-500 {
+    background-color: #4a5568 !important; /* Tailwind's gray-600 */
+    color: #f7fafc !important; /* Tailwind's gray-100 */
+}
+
+.bg-cyan-500:hover {
+    background-color: #718096 !important; /* Tailwind's gray-500 */
+}
+
+.bg-cyan-800\/20 {
+    background-color: rgba(
+        55,
+        65,
+        81,
+        0.2
+    ) !important; /* gray-700 at 20% opacity */
+}

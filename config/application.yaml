@@ -1,0 +1,4 @@
+# Core application settings
+app:
+  name: "PacMan"
+  version: "0.1 Alpha"

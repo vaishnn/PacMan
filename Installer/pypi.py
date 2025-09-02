@@ -6,44 +6,50 @@ import os
 # This code is specifically for mac
 # Note to self: add some if else statements for windows execution
 
-def getAppSupportDirectory(appName: str = "PacMan") -> str:
+
+
+
+def get_app_support_directory(appName: str = "PacMan") -> str:
     # Just creates the directory if it doesn't exist
-    appSupportDir = os.path.expanduser(f"~/Library/Application Support/{appName}")
-    os.makedirs(appSupportDir, exist_ok=True)
+    app_support_dir = os.path.expanduser(f"~/Library/Application Support/{appName}")
+    os.makedirs(app_support_dir, exist_ok=True)
 
-    return appSupportDir
+    return app_support_dir
 
-def savesData(data: list, appName: str = "PacMan", fileName: str = "libraryList.txt"):
+def save_file(data: list, app_name: str = "PacMan", file_name: str = "libraryList.txt"):
     # Saves Data in a pre-defined directory
-    appSupportDir = getAppSupportDirectory(appName)
-    filePath = os.path.join(appSupportDir, fileName)
-    with open(filePath, "w") as file:
+    app_support_dir = get_app_support_directory(app_name)
+    file_path = os.path.join(app_support_dir, file_name)
+    with open(file_path, "w") as file:
         file.write("\n".join(data))
 
-def downloadDataFromPyPi(appName: str = "PacMan", fileName: str = "libraryList.txt") -> list:
+def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "libraryList.txt") -> list:
     # Downloads Data from PyPi.org
     url = "https://pypi.org/simple/"
     headers = {"User-Agent": "insomnia/11.4.0"}
     response = requests.request("GET", url, data="", headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     librarylist = [tag.get_text() for tag in soup.find_all('a')]
-    savesData(librarylist, appName, fileName)
+    save_file(librarylist, app_name, file_name)
     return librarylist
 
-def loadData(appName = "PacMan", fileName = "libraryList.txt") -> list:
+def load_data(app_name = "PacMan", file_name = "libraryList.txt") -> list:
     # Loads Data from a pre-defined directory
     try:
-        appSupportDir = getAppSupportDirectory(appName)
-        filePath = os.path.join(appSupportDir, fileName)
+        appSupportDir = get_app_support_directory(app_name)
+        filePath = os.path.join(appSupportDir, file_name)
 
         if os.path.exists(filePath):
             with open(filePath, "r") as file:
                 data = file.read().splitlines()
+
         else:
-            data = downloadDataFromPyPi(appName, fileName)
+            data = download_data_from_pypi(app_name, file_name)
     except Exception as e:
         data = []
         print(f"Error loading data: {e}")
+    if data:
+        data = [{"name": name} for name in data]
     return data
 
 class PyPiRunner(QObject):
@@ -74,10 +80,10 @@ class PyPiWorker(QObject):
         self.fileName = fileName
 
     def run(self):
-        self.libraryList = loadData(self.appName, self.fileName)
+        self.libraryList = load_data(self.appName, self.fileName)
         librarylist = self.libraryList
         self.listOfLibraries.emit(librarylist)
         self.finished.emit()
 
 if __name__ == "__main__":
-    print(loadData())
+    print(load_data())

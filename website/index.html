@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>PacMan - Visual Python Package Management</title>
+        <!-- Google Fonts: Inter -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <!-- Main Stylesheet -->
+        <link rel="stylesheet" href="style.css" />
+        <!-- Tailwind CSS for utility classes -->
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-900 text-gray-300 font-['Inter',_sans-serif]">
+        <!-- Header & Navigation -->
+        <header
+            class="fixed top-0 left-0 right-0 z-50 bg-gray-900 bg-opacity-80 backdrop-blur-md"
+        >
+            <div
+                class="container mx-auto px-6 py-4 flex justify-between items-center"
+            >
+                <h1 class="text-2xl font-bold text-white">PacMan</h1>
+                <nav class="hidden md:flex space-x-8">
+                    <a
+                        href="#features"
+                        class="hover:text-cyan-400 transition-colors"
+                        >Features</a
+                    >
+                    <a
+                        href="#visualize"
+                        class="hover:text-cyan-400 transition-colors"
+                        >Visualize</a
+                    >
+                    <a
+                        href="#tech"
+                        class="hover:text-cyan-400 transition-colors"
+                        >Tech Stack</a
+                    >
+                </nav>
+                <a
+                    href="https://github.com"
+                    target="_blank"
+                    class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors"
+                >
+                    View on GitHub
+                </a>
+            </div>
+        </header>
+
+        <main>
+            <!-- Hero Section -->
+            <section id="home" class="pt-32 pb-16 text-center">
+                <div class="container mx-auto px-6">
+                    <h2
+                        class="text-5xl md:text-7xl font-extrabold text-white leading-tight"
+                    >
+                        Visual Python Package Management.
+                    </h2>
+                    <p
+                        class="mt-6 text-lg md:text-xl max-w-3xl mx-auto text-gray-400"
+                    >
+                        Manage virtual environments, visualize dependencies, and
+                        secure your projects with an intuitive GUI.
+                    </p>
+                    <div
+                        class="mt-10 flex justify-center items-center space-x-4"
+                    >
+                        <a
+                            href="https://github.com"
+                            target="_blank"
+                            class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-lg py-3 px-8 rounded-lg transition-colors"
+                        >
+                            View on GitHub
+                        </a>
+                    </div>
+                    <div class="mt-16 px-4">
+                        <!-- Placeholder for App Screenshot -->
+                        <img
+                            src="Images/PacMan.png"
+                            alt="PacMan Application Screenshot"
+                            class="rounded-l shadow-2xl shadow-cyan-500/10 mx-auto"
+                            onerror="this.onerror=null;this.src='https://placehold.co/1200x675/1a202c/4a5568?text=App+Screenshot+Not+Found';"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            <!-- Problem Statement Section -->
+            <section id="problem" class="py-20 bg-gray-800/50">
+                <div class="container mx-auto px-6 text-center">
+                    <h3 class="text-3xl font-bold text-white">
+                        Tired of the command line?
+                    </h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-gray-400">
+                        Managing Python projects can mean juggling endless `pip`
+                        commands, `requirements.txt` files, and hidden
+                        dependency conflicts. PacMan brings clarity and control
+                        into a single, visual workspace.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Core Features Section -->
+            <section id="features" class="py-24">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-white">
+                            Everything You Need to Manage Your Projects
+                        </h2>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-12">
+                        <!-- Feature 1 -->
+                        <div class="text-center p-8 bg-gray-800 rounded-xl">
+                            <h4 class="text-2xl font-bold text-white">
+                                Effortless Package Control
+                            </h4>
+                            <p class="mt-3 text-gray-400">
+                                Search, install, update, and remove packages
+                                from PyPI with a simple, intuitive interface.
+                                Manage specific versions and handle dependencies
+                                automatically.
+                            </p>
+                        </div>
+                        <!-- Feature 2 -->
+                        <div class="text-center p-8 bg-gray-800 rounded-xl">
+                            <h4 class="text-2xl font-bold text-white">
+                                Full Environment Management
+                            </h4>
+                            <p class="mt-3 text-gray-400">
+                                Create, delete, and switch between virtual
+                                environments seamlessly. Generate
+                                `requirements.txt` files to ensure your builds
+                                are always reproducible.
+                            </p>
+                        </div>
+                        <!-- Feature 3 -->
+                        <div class="text-center p-8 bg-gray-800 rounded-xl">
+                            <h4 class="text-2xl font-bold text-white">
+                                Proactive Security Scanning
+                            </h4>
+                            <p class="mt-3 text-gray-400">
+                                Automatically scan your installed packages for
+                                known security vulnerabilities and get clear,
+                                actionable advice on how to resolve them.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Analyst Edge Section -->
+            <section id="visualize" class="py-24 bg-gray-900">
+                <div class="container mx-auto px-6">
+                    <div class="text-center mb-16">
+                        <h2 class="text-4xl font-bold text-white">
+                            Visualize Your Workflow
+                        </h2>
+                    </div>
+                    <!-- Feature Block 1 -->
+                    <div class="grid md:grid-cols-2 gap-16 items-center mb-20">
+                        <div>
+                            <img
+                                src="https://placehold.co/800x600/1a202c/4a5568?text=Dependency+Graph"
+                                alt="Dependency Graph Visualization"
+                                class="rounded-xl shadow-lg"
+                                onerror="this.onerror=null;this.src='https://placehold.co/800x600/1a202c/4a5568?text=Image+Not+Found';"
+                            />
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-bold text-white">
+                                Untangle Complex Dependencies
+                            </h3>
+                            <p class="mt-4 text-gray-400">
+                                Stop guessing how your packages are connected.
+                                PacMan generates an interactive dependency
+                                graph, allowing you to visually trace
+                                relationships, identify potential conflicts, and
+                                understand your project's architecture at a
+                                glance.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Feature Block 2 -->
+                    <div class="grid md:grid-cols-2 gap-16 items-center">
+                        <div class="md:order-2">
+                            <img
+                                src="https://placehold.co/800x600/1a202c/4a5568?text=Security+Audit+Screen"
+                                alt="Security Audit Screen"
+                                class="rounded-xl shadow-lg"
+                                onerror="this.onerror=null;this.src='https://placehold.co/800x600/1a202c/4a5568?text=Image+Not+Found';"
+                            />
+                        </div>
+                        <div class="md:order-1">
+                            <h3 class="text-3xl font-bold text-white">
+                                Make Data-Driven Security Decisions
+                            </h3>
+                            <p class="mt-4 text-gray-400">
+                                Don't just manage packages; manage risk. Our
+                                security dashboard presents vulnerability data
+                                in a clear, organized way, helping you
+                                prioritize updates and maintain a secure,
+                                professional development environment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tech Stack Section -->
+            <section id="tech" class="py-20">
+                <div class="container mx-auto px-6 text-center">
+                    <h2 class="text-4xl font-bold text-white mb-10">
+                        Built With Modern Tools
+                    </h2>
+                    <div
+                        class="flex flex-wrap justify-center items-center gap-8"
+                    >
+                        <!-- Replace with your actual tech stack logos -->
+                        <span class="text-lg font-medium">Python</span>
+                        <span class="text-lg font-medium">wxWidgets</span>
+                        <span class="text-lg font-medium">Material Design</span>
+                        <span class="text-lg font-medium">JavaScript</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Final CTA Section -->
+            <section class="py-24 bg-cyan-800/20 text-center">
+                <div class="container mx-auto px-6">
+                    <h2 class="text-4xl font-bold text-white">
+                        Ready to See the Code?
+                    </h2>
+                    <p class="mt-4 text-lg max-w-2xl mx-auto text-gray-400">
+                        This project is open-source and available on GitHub.
+                        Explore the codebase, check out the feature roadmap, or
+                        clone the repo to run it yourself.
+                    </p>
+                    <div class="mt-8">
+                        <a
+                            href="https://github.com"
+                            target="_blank"
+                            class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold text-lg py-3 px-8 rounded-lg transition-colors"
+                        >
+                            View on GitHub
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="py-8 bg-gray-800">
+            <div class="container mx-auto px-6 text-center text-gray-500">
+                <p>&copy; 2025 PacMan by [Your Name]. All rights reserved.</p>
+            </div>
+        </footer>
+
+        <!-- JavaScript File -->
+        <script src="script.js"></script>
+    </body>
+</html>

@@ -6,5 +6,7 @@ go_app
 chrome*
 dist
 build*
-website
-.D*
+.DS_Store
+.test*
+test*.py
+icons/ikonat*

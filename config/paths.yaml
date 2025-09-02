@@ -1,0 +1,32 @@
+# All relative paths and API endpoints
+paths:
+  assets:
+    fonts:
+      main: "fonts/Figtree-Light.ttf"
+    images:
+      appLogo: "icons/appLogo.png"
+      uninstall: "icons/uninstall.svg"
+      install: "icons/install.svg"
+      installing: "icons/installing.png"
+      installed: "icons/installed.png"
+      arrowDown: "icons/fold.svg"
+  executables:
+    library:
+      darwin: "./go_app"
+      win32: "./go_app.exe"
+      win64: "./go_app.exe"
+      linux: "./go_app"
+  search:
+    darwin:
+      - "/Library/Frameworks/Python.framework/Versions"
+      - "/usr/local/bin"
+      - "/usr/bin"
+      - "/opt/homebrew/bin"
+    win32: "Needs to be implemented"
+    win64: "Needs to be implemented"
+    linux: "Needs to be implemented"
+
+api:
+  pypi:
+    libraryDetails: "https://pypi.org/pypi/{}/json"
+    packageList: "https://pypi.org/simple/"
