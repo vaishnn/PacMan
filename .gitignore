@@ -7,4 +7,4 @@ chrome*
 dist
 build*
 website
-.D*
+.DS_Store
