@@ -8,7 +8,6 @@ from PyQt6.QtGui import QIcon
 # import qtawesome as qta
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
 
-
 class Library(QWidget):
     """
     This class is for all Library Related Widgets
@@ -22,9 +21,10 @@ class Library(QWidget):
     """
     listLibraryRefreshed = pyqtSignal()
 
-    def __init__(self, colorScheme):
+    def __init__(self, colorScheme, config: dict = {}):
         # I am only adding comments cause this code looks ugly
         super().__init__()
+        self.config = config
         self.toolTipCache = {}
         self.setObjectName("library")
         self.setStyleSheet(colorScheme)

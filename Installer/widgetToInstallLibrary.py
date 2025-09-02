@@ -1,7 +1,7 @@
 from PyQt6 import QtCore
 from PyQt6.QtCore import QAbstractListModel, QEvent, QModelIndex, QRect, QSize, QTimer, QVariant, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit, QListView, QPushButton, QSizePolicy, QStyle, QStyleOptionButton, QStyledItemDelegate, QVBoxLayout, QWidget
+from PyQt6.QtGui import QColor, QPainter, QPixmap
+from PyQt6.QtWidgets import  QLabel, QLineEdit, QListView,  QSizePolicy, QStyle,  QStyledItemDelegate, QVBoxLayout, QWidget
 from Installer.pypi import PyPiRunner
 
 DataRole = Qt.ItemDataRole.UserRole + 1
@@ -15,12 +15,15 @@ class PyPIitemDelegate(QStyledItemDelegate):
         self.installPixmap = QPixmap("icons/download.png")
         self.padding = 10
 
-    def paint(self, painter, option, index):
+    def paint(self, painter: QPainter, option, index): #type: ignore
         # Let the base class handle background colors for selection, hover, etc.
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
         rect = option.rect
+
+        # Draw the hover effect
+        if option.state & QStyle.StateFlag.State_MouseOver:
+            painter.fillRect(rect, self.colorInstall)
 
         itemData = index.data(DataRole)
         if not itemData:
@@ -133,8 +136,9 @@ class Installer(QWidget):
     # Current Implementation just brings 30 libraries
     # It is storing all the libraries but it is not displaying them
     populate = pyqtSignal()
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, config: dict = {}):
         super().__init__(parent)
+        self.config = config
 
         # Where the libraries are stored but not all are displayed at same time
         self.allLibraries = []

@@ -1,51 +1,17 @@
 import sys
-from PyQt6.QtGui import QIcon, QFontDatabase, QFont
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QStackedWidget, QFileDialog
 )
 from PyQt6.QtCore import Qt
+from helperFunctions.otherFunction import loadYaml, loadFont
 from doingSomethingGO.goBrigde import ProgramRunner
 from library.libraryListWidget import Library
 from Installer.widgetToInstallLibrary import Installer
-import yaml
-import os
 
-def loadConfig(path: str) -> dict:
-    try:
-        with open(path, 'r') as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"Config file not found at {path}")
-        return {}
-    except Exception as e:
-        print(f"Error loading config file: {e}")
-        return {}
 
-def loadFont(fontPath: str, fontSize: int = 12) -> QFont:
-    # This method is not working for relative paths, so currently using absolute paths
-    try:
-        scriptDir = os.path.dirname(os.path.abspath(__file__))
-        fontId = QFontDatabase.addApplicationFont(
-            os.path.join(scriptDir, fontPath))
-        print(fontId)
-        font = QFont(QFontDatabase.applicationFontFamilies(fontId)[0], fontSize)
-        return font
-    except Exception as e:
-        print(f"Error loading font: {e}")
-        return QFont("Arial", fontSize)
-
-def loadColorScheme(path="colorScheme.yaml"):
-    try:
-        with open(path, 'r') as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"Color scheme file not found at {path}")
-        raise
-    except Exception as e:
-        print(f"Error loading color scheme file: {e}")
-        raise
 
 
 class Analysis(QWidget):
@@ -93,9 +59,10 @@ class PacMan(QMainWindow):
     Complete UI Will probably be implemented in here
     """
 
-    def __init__(self, colorScheme: dict):
+    def __init__(self, colorScheme: dict, config: dict = {}):
         super().__init__()
         self.setFont
+        self.config = config
         # Idk what even is this for
         self.setObjectName("PacMan")
 
@@ -111,12 +78,12 @@ class PacMan(QMainWindow):
         # Runner classes for GO Program, only made because I wanted to learn GO
         # This just fetched libraries present in the virtual env
         # Have to implement something where pip is not used (very few cases)
-        self.programRunner = ProgramRunner(self.goExecutable)
+        self.programRunner = ProgramRunner(self.goExecutable, self.config)
         self.programRunner.finished.connect(self.handleListLibraries)
 
         self.contentDict = {
-            "Libraries": Library(colorScheme['libraryListToolTip']),
-            "Installer": Installer(),
+            "Libraries": Library(colorScheme['libraryListToolTip'], self.config),
+            "Installer": Installer(self.config),
             "Analysis": Analysis(),
             "Dependency Tree": DependencyTree(),
             "Settings": Setting(),
@@ -213,11 +180,13 @@ class PacMan(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    config = loadConfig("config.yaml")
+    configFilePath = "config.yaml"
+    colorSchemePath = "colorScheme.yaml"
+    config = loadYaml(configFilePath)
     font = loadFont(
         config.get("fonts", [])[0],
-        config.get("font_size", 12))
+        config.get("font_size", 14))
     app.setFont(font)
-    window = PacMan(loadColorScheme())
+    window = PacMan(loadYaml(colorSchemePath))
     window.show()
     sys.exit(app.exec())

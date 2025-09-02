@@ -1,7 +1,24 @@
-API_ENDPOINTS:
-  pypi:
-    library_details: https://pypi.org/pypi/{package}/json
+# all the settings for the application
+settings:
+  appName: "PacMan"
+  version: "0.1 Alpha"
+  fonts:
+    - fonts/Figtree/static/Figtree_Light.ttf
+  fontSize: 14
 
-font_size: 14
-fonts:
-  - fonts/Figtree/static/Figtree_Light.ttf
+# all the API's which are going to be used in this application
+api:
+  pypi:
+    libraryDetails: https://pypi.org/pypi/{package}/json
+    packageList: https://pypi.org/simple/
+
+# all the colors for the application
+colors:
+  primary: "#007bff"
+  secondary: "#6c757d"
+  success: "#28a745"
+  danger: "#dc3545"
+  warning: "#ffc107"
+  info: "#17a2b8"
+  light: "#f8f9fa"
+  dark: "#343a40"

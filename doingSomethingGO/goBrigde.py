@@ -4,8 +4,9 @@ from PyQt6.QtCore import QObject, pyqtSignal, QThread
 
 class ProgramRunner(QObject):
     finished = pyqtSignal(str, list)
-    def __init__(self, executablePath):
+    def __init__(self, executablePath, config: dict = {}):
         super().__init__()
+        self.config = config
         self.executablePath = executablePath
         self.threadRunner = None
         self.worker = None
