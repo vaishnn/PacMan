@@ -7,3 +7,5 @@ chrome*
 dist
 build*
 .DS_Store
+.test*
+test*.py

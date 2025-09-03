@@ -3,22 +3,49 @@ application:
   appName: "PacMan"
   version: "0.1 Alpha"
   fontSize: 14
-  minSize: [800, 600]
+  minSize: [800, 250]
   geometry: [100, 100, 800, 600]
   mainLayout:
     contentsMargin: [0, 0, 0, 0]
     spacing: 0
+  sideBar:
+    minWidth: 100
+    maxWidth: 200
+    contentMargins: [10, 10, 10, 10]
+    spacing: 15
+    navListContentMargin: [0, 0, 0, 0]
+    navListSpacing: 3
+  library:
+    locationLayout:
+      contentMargin: [0, 0, 0, 0]
+    labelLocation:
+      contentMargin: [0, 0, 0, 0]
+  installer:
+    contentMargin: [0, 0, 0, 0]
 
 # Some Control Parameters
 controls:
-  uninstallManagerTimout: 100000
+  library:
+    uninstallManagerTimout: 10000
 
 # Relative paths
 paths:
-  fonts: fonts/Figtree/Figtree_Light.ttf
+  fonts:
+    main: fonts/Figtree-Light.ttf
   images:
     icon:
-      delete: images/delete.png
+      appLogo: icons/appLogo.png
+      delete: icons/delete.png
+  executablePaths:
+    library:
+      darwin: ./go_app
+      win32: ./go_app.exe
+      win64: ./go_app.exe
+      linux: ./go_app
+
+# Object Names for styling mainly
+objects:
+  mainWindow: PacMan"
 
 # All the API's which are going to be used in this application
 api:
@@ -27,6 +54,188 @@ api:
     packageList: https://pypi.org/simple/
 
 # All the colors for the application
+# colors:
+#   primary: "#007bff"
+#   secondary: "#6c757d"
+#   success: "#28a745"
+#   danger: "#dc3545"
+#   warning: "#ffc107"
+#   info: "#17a2b8"
+#   light: "#f8f9fa"
+#   dark: "#343a40"
+
+# # Stylesheet have multiple sections
+# stylesheet:
+#   main: |
+#     QMainWindow, QWidget {
+#     }
+#     #sideBar {
+#         background-color: "#272321";
+#     }
+#     #contentStack {
+#         background-color: #2D2D2D;
+#     }
+#     /* Navigation List */
+#     #navList {
+#         border: none;
+#         background-color: #272321;
+#     }
+#     #navList::item {
+#         padding: 10px;
+#         color: #AAAAAA;
+#         border-radius: 5px;
+#     }
+#     #navList::item:hover {
+#         background-color: #3A3A3A;
+#     }
+#     #navList::item:selected {
+#         background-color: #333333;
+#         color: #FFFFFF;
+#         font-weight: bold;
+#     }
+#     #labelLocation {
+#       background-color: #3C3C3C;
+#       color: #AAAAAA;
+#       font-style: italic;
+#       border: 0px solid #555555;
+#       border-radius: 5px;
+#       padding-left: 10px;
+#       padding-right: 10px;
+#       font-size: 13px;
+#     }
+#     #labelLocation:hover {
+#       background-color: #444444;
+#     }
+#     #labelLocation:pressed {
+#       background-color: #555555;
+#     }
+#     #labelLocationFinal {
+#       color: #AAAAAA;
+#       font-size: 13px;
+#     }
+#     #searchBarInLibraryListWidget {
+#       background-color: #242424;
+#       color: #EEEEEE;
+#       border: 0px solid #555555;
+#       border-radius: 5px;
+#       padding-left: 10px;
+#       padding-right: 10px;
+#       font-size: 13px;
+#     }
+#     #searchBarInLibraryListWidget:hover {
+#       background-color: #444444;
+#     }
+#     #searchBarInLibraryListWidget:pressed {
+#       background-color: #555555;
+#     }
+#     #searchBarInstaller {
+#       background-color: #242424;
+#       color: #EEEEEE;
+#       border: 0px solid #555555;
+#       border-radius: 5px;
+#       padding-left: 10px;
+#       padding-right: 10px;
+#       font-size: 13px;
+#     }
+#     #searchBarInstaller:hover {
+#       background-color: #444444;
+#     }
+#     #searchBarInstaller:pressed {
+#       background-color: #555555;
+#     }
+#     #libraryListViewInstaller{
+#       background-color: #2D2D2D;
+#       border-radius: 5px;
+#     }
+#     #libraryListViewInstaller::item {
+#       background-color: #2D2D2D;
+#       border-radius: 5px;
+#     }
+#     #libraryListViewInstaller::item:selected {
+#       background-color: #333333;
+#       border-radius: 5px;
+#     }
+#     #libraryListViewInstaller::item:hover {
+#       background-color: #444444;
+#       border-radius: 5px;
+#     }
+#     #libraryList {
+#       background-color: #2D2D2D;
+#       border-radius: 5px;
+#     }
+#     #libraryList::item {
+#       background-color: #2D2D2D;
+#       border-radius: 5px;
+
+#     }
+#     #libraryList::item:selected {
+#       background-color: #333333;
+#       border-radius: 5px;
+#     }
+#     #libraryList::item:hover {
+#       background-color: #444444;
+#       border-radius: 5px;
+#     }
+#     #tagLibraryPanel {
+#       font-style: italic;
+#       color: #AAAAAA;
+#       border-right: 1px solid #FFFFFF;
+#     }
+#     #versionLibraryPanel {
+#       font-style: italic;
+#       color: #AAAAAA;
+#     }
+#     #deleteButtonFromLibraryListWidget {
+#       color: #AAAAAA;
+#       border-radius: 5px;
+#       border: none;
+#       padding: 5px;
+#       font-size: 12px;
+#       }
+#     #deleteButtonFromLibraryListWidget:hover {
+#       background-color: #444444;
+#     }
+#     #deleteButtonFromLibraryListWidget:pressed {
+#       background-color: #555555;
+#     }
+#     """
+#     QMessageBox {
+#       background-color: #333;
+#       border: 1px solid #555;
+#     }
+
+#     QMessageBox QLabel {
+#       color: #FFF;
+#       font-size: 16px;
+#     }
+
+#     QMessageBox QPushButton {
+#       background-color: #007ACC;
+#       color: white;
+#       border-radius: 5px;
+#       padding: 8px;
+#       min-width: 80px;
+#       font-size: 14px;
+#     }
+
+#     QMessageBox QPushButton:hover {
+#       background-color: #005C99;
+#     }
+
+#     QMessageBox QPushButton:pressed {
+#       background-color: #004C80;
+#     }
+#     """
+#   libraryListToolTip: |
+#     QToolTip {
+#       background-color: #3C3C3C;
+#       color: #AAAAAA;
+#       border-radius: 5px;
+#       padding: 5px;
+#       font-size: 14px;
+#     }
+
+# Colors definition
 colors:
   primary: "#007bff"
   secondary: "#6c757d"
@@ -37,153 +246,173 @@ colors:
   light: "#f8f9fa"
   dark: "#343a40"
 
-# Stylesheet have multiple sections
+  # Application-specific colors
+  background:
+    main: "#2D2D2D"
+    sidebar: "#272321"
+    input: "#242424"
+    hover: "#444444"
+    pressed: "#555555"
+    selected: "#333333"
+  text:
+    normal: "#EEEEEE"
+    muted: "#AAAAAA"
+    bright: "#FFFFFF"
+  border:
+    light: "#555555"
+    dark: "#3C3C3C"
+  button:
+    primary: "#007ACC"
+    primaryHover: "#005C99"
+    primaryPressed: "#004C80"
+
+# Stylesheet with multiple sections using color variables
 stylesheet:
   main: |
     QMainWindow, QWidget {
     }
-    #sidebar {
-        background-color: #272321;
+    #sideBar {
+        background-color: {{ colors.background.sidebar }};
     }
     #contentStack {
-        background-color: #2D2D2D;
+        background-color: {{ colors.background.main }};
     }
     /* Navigation List */
     #navList {
         border: none;
-        background-color: #272321;
+        background-color: {{ colors.background.sidebar }};
     }
     #navList::item {
         padding: 10px;
-        color: #AAAAAA;
+        color: {{ colors.text.muted }};
         border-radius: 5px;
     }
     #navList::item:hover {
-        background-color: #3A3A3A;
+        background-color: {{ colors.background.hover }};
     }
     #navList::item:selected {
-        background-color: #333333;
-        color: #FFFFFF;
+        background-color: {{ colors.background.selected }};
+        color: {{ colors.text.bright }};
         font-weight: bold;
     }
     #labelLocation {
-      background-color: #3C3C3C;
-      color: #AAAAAA;
+      background-color: {{ colors.border.dark }};
+      color: {{ colors.text.muted }};
       font-style: italic;
-      border: 0px solid #555555;
+      border: 0px solid {{ colors.border.light }};
       border-radius: 5px;
       padding-left: 10px;
       padding-right: 10px;
       font-size: 13px;
     }
     #labelLocation:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
     }
     #labelLocation:pressed {
-      background-color: #555555;
+      background-color: {{ colors.background.pressed }};
     }
     #labelLocationFinal {
-      color: #AAAAAA;
+      color: {{ colors.text.muted }};
       font-size: 13px;
     }
     #searchBarInLibraryListWidget {
-      background-color: #242424;
-      color: #EEEEEE;
-      border: 0px solid #555555;
+      background-color: {{ colors.background.input }};
+      color: {{ colors.text.normal }};
+      border: 0px solid {{ colors.border.light }};
       border-radius: 5px;
       padding-left: 10px;
       padding-right: 10px;
       font-size: 13px;
     }
     #searchBarInLibraryListWidget:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
     }
     #searchBarInLibraryListWidget:pressed {
-      background-color: #555555;
+      background-color: {{ colors.background.pressed }};
     }
     #searchBarInstaller {
-      background-color: #242424;
-      color: #EEEEEE;
-      border: 0px solid #555555;
+      background-color: {{ colors.background.input }};
+      color: {{ colors.text.normal }};
+      border: 0px solid {{ colors.border.light }};
       border-radius: 5px;
       padding-left: 10px;
       padding-right: 10px;
       font-size: 13px;
     }
     #searchBarInstaller:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
     }
     #searchBarInstaller:pressed {
-      background-color: #555555;
+      background-color: {{ colors.background.pressed }};
     }
     #libraryListViewInstaller{
-      background-color: #2D2D2D;
+      background-color: {{ colors.background.main }};
       border-radius: 5px;
     }
     #libraryListViewInstaller::item {
-      background-color: #2D2D2D;
+      background-color: {{ colors.background.main }};
       border-radius: 5px;
     }
     #libraryListViewInstaller::item:selected {
-      background-color: #333333;
+      background-color: {{ colors.background.selected }};
       border-radius: 5px;
     }
     #libraryListViewInstaller::item:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
       border-radius: 5px;
     }
     #libraryList {
-      background-color: #2D2D2D;
+      background-color: {{ colors.background.main }};
       border-radius: 5px;
     }
     #libraryList::item {
-      background-color: #2D2D2D;
+      background-color: {{ colors.background.main }};
       border-radius: 5px;
 
     }
     #libraryList::item:selected {
-      background-color: #333333;
+      background-color: {{ colors.background.selected }};
       border-radius: 5px;
     }
     #libraryList::item:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
       border-radius: 5px;
     }
     #tagLibraryPanel {
       font-style: italic;
-      color: #AAAAAA;
-      border-right: 1px solid #FFFFFF;
+      color: {{ colors.text.muted }};
+      border-right: 1px solid {{ colors.text.bright }};
     }
     #versionLibraryPanel {
       font-style: italic;
-      color: #AAAAAA;
+      color: {{ colors.text.muted }};
     }
     #deleteButtonFromLibraryListWidget {
-      color: #AAAAAA;
+      color: {{ colors.text.muted }};
       border-radius: 5px;
       border: none;
       padding: 5px;
       font-size: 12px;
       }
     #deleteButtonFromLibraryListWidget:hover {
-      background-color: #444444;
+      background-color: {{ colors.background.hover }};
     }
     #deleteButtonFromLibraryListWidget:pressed {
-      background-color: #555555;
+      background-color: {{ colors.background.pressed }};
     }
-    """
+
     QMessageBox {
-      background-color: #333;
-      border: 1px solid #555;
+      background-color: {{ colors.background.selected }};
+      border: 1px solid {{ colors.border.light }};
     }
 
     QMessageBox QLabel {
-      color: #FFF;
+      color: {{ colors.text.bright }};
       font-size: 16px;
     }
 
     QMessageBox QPushButton {
-      background-color: #007ACC;
+      background-color: {{ colors.button.primary }};
       color: white;
       border-radius: 5px;
       padding: 8px;
@@ -192,17 +421,17 @@ stylesheet:
     }
 
     QMessageBox QPushButton:hover {
-      background-color: #005C99;
+      background-color: {{ colors.button.primaryHover }};
     }
 
     QMessageBox QPushButton:pressed {
-      background-color: #004C80;
+      background-color: {{ colors.button.primaryPressed }};
     }
-    """
+
   libraryListToolTip: |
     QToolTip {
-      background-color: #3C3C3C;
-      color: #AAAAAA;
+      background-color: {{ colors.border.dark }};
+      color: {{ colors.text.muted }};
       border-radius: 5px;
       padding: 5px;
       font-size: 14px;

@@ -4,12 +4,9 @@ from PyQt6.QtCore import QObject, pyqtSignal, QThread
 
 class ProgramRunner(QObject):
     finished = pyqtSignal(str, list)
-    def __init__(self, executablePath, config: dict = {}):
+    def __init__(self, executablePath):
         super().__init__()
-        self.config = config
         self.executablePath = executablePath
-        self.threadRunner = None
-        self.worker = None
 
     def startGOProgram(self, venvPath):
         self.threadRunner = QThread()
@@ -18,10 +15,13 @@ class ProgramRunner(QObject):
         self.threadRunner.started.connect(self.worker.run)
         self.worker.finished.connect(self._handleResults)
         self.worker.finished.connect(self.threadRunner.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.threadRunner.finished.connect(self.threadRunner.deleteLater)
+        self.worker.finished.connect(self.stop)
         self.threadRunner.start()
 
+    def stop(self):
+        if self.threadRunner.isRunning():
+            self.threadRunner.quit()
+            self.threadRunner.wait()
 
     def _handleResults(self, returnCode, stdout, stderr):
         if returnCode == 0 and not stderr:
@@ -42,7 +42,6 @@ class GoWorker(QObject):
         self.venvPath = venvPath
     def run(self):
         try:
-            print(self.venvPath)
             command = [self.executablePath, self.venvPath]
             result = subprocess.run(command, capture_output = True, text = True, check = False)
             self.finished.emit(result.returncode, result.stdout, result.stderr)

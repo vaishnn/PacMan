@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
-from library.toolTipLibrary import getLibraryDetails
+from library.toolTipLibrary import GetLibraryDetails
 from library.deleteLibrary import UninstallManager
 from PyQt6.QtGui import QIcon
 
@@ -24,18 +24,22 @@ class Library(QWidget):
     def __init__(self, config: dict = {}):
         # I am only adding comments cause this code looks ugly
         super().__init__()
+
         self.config = config
         self.toolTipCache = {}
         self.setObjectName("library")
         self.setStyleSheet(self.config.get("stylesheet", {}).get("libraryListToolTip", ""))
-
         # Setting up Tooltip Fetching
-        self.getLibraryDetails = getLibraryDetails()
+        self.getLibraryDetails = GetLibraryDetails()
         self.getLibraryDetails.detailsWithName.connect(
             self.getLibraryDetailsThroughClass)
 
         # Setting up Uninstall Manager
-        self.uninstallManager = UninstallManager(config = self.config)
+        self.uninstallManager = UninstallManager(
+            IDLE_TIMOUT = int(self.config.get(
+                "controls", {}).get("library", {}).get("uninstallManagerTimout", 10000))
+        )
+
         self.uninstallManager.uninstallFinished.connect(
             self.onUninstallFinished)
 
@@ -63,7 +67,7 @@ class Library(QWidget):
         # This require some fixing, I dont Know How but it does
 
         # self.searchBarTypingTimer.setInterval(300)
-        # self.searchBarTypingTimer.setSingleShot(True)
+        self.searchBarTypingTimer.setSingleShot(True)
         self.searchBarTypingTimer.timeout.connect(
             self.whenTimerForToolTipIsFinished)
 
@@ -81,7 +85,9 @@ class Library(QWidget):
         self.libraryList.setObjectName("libraryList")
         # self.libraryList.setResizeMode(QListView.ResizeMode.Adjust)
         self.libraryLayout.addWidget(self.libraryList)
+        self.listLibraryRefreshed.connect(self.getLibraryDetails.startThread)
         self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
+
 
     def whenTimerForToolTipIsFinished(self):
         self.listLibraryRefreshed.emit()
@@ -186,7 +192,6 @@ class Library(QWidget):
             if packageName in self.itemMap:
                 widget = self.itemMap[packageName][0]
                 widget.setToolTip("Uninstalling...")
-            print(packageName)
             self.uninstallManager.requestUninstall(
                 self.pythonExecPath, packageName)
 

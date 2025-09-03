@@ -6,13 +6,11 @@ from PyQt6.QtWidgets import (
     QWidget, QLabel, QStackedWidget, QFileDialog
 )
 from PyQt6.QtCore import Qt
-from helperFunctions.otherFunction import loadYaml, loadFont
-from doingSomethingGO.goBrigde import ProgramRunner
+from helperFunctions.otherFunction import loadFont
+from helperFunctions.yamlProcessor import load_config
+from loadLibraries.goBrigde import ProgramRunner
 from library.libraryListWidget import Library
 from Installer.widgetToInstallLibrary import Installer
-
-
-
 
 class Analysis(QWidget):
     def __init__(self):
@@ -23,7 +21,6 @@ class Analysis(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-
 class DependencyTree(QWidget):
     def __init__(self):
         super().__init__()
@@ -32,7 +29,6 @@ class DependencyTree(QWidget):
         self.mainLayout.addWidget(label)
         self.setLayout(self.mainLayout)
         pass
-
 
 class Setting(QWidget):
     def __init__(self):
@@ -43,7 +39,6 @@ class Setting(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-
 class About(QWidget):
     def __init__(self):
         super().__init__()
@@ -53,40 +48,46 @@ class About(QWidget):
         self.setLayout(self.mainLayout)
         pass
 
-
 class PacMan(QMainWindow):
     """
     Main Window of the Application
     - What someone can do with it, You can start it
     """
-
     def __init__(self, config: dict = {}):
         super().__init__()
-        self.setFont
         self.config = config
 
         # Getting Data from the config file
-        self.appName = self.config.get("application", {}).get("appName", "PacMan")
-        self.setObjectName("PacMan") # May this serve some purpose in the future
+        self.appName = self.config.get("application", {}).get("appName", "")
+
+         # May this serve some purpose in the future
+        self.setObjectName(self.config.get("objects", {}).get("mainWindow", ""))
 
         # This doesnot work
-        self.setWindowIcon(QIcon("icons/delete.png"))
+        self.setWindowIcon(QIcon(
+            self.config.get("paths", {}).get("images", {}).get("icon", {}).get("appLogo", "")
+        ))
 
-        # I am on mac and never tested on windows Yet
-        if sys.platform == "win32":
-            self.goExecutable = "./go_app.exe"
+        # I am on mac and never tested on windows Yet and linux but should work
+        if sys.platform == "win32" or sys.platform == "win64":
+            self.goExecutable = self.config.get(
+                "paths", {}).get("executablePaths", {}).get("library", {}).get("win32", ""
+            )
         else:
-            self.goExecutable = "./go_app"
+            self.goExecutable = self.config.get(
+                "paths", {}).get("executablePaths", {}).get("library", {}).get("darwin", ""
+            )
 
         # Runner classes for GO Program, only made because I wanted to learn GO
         # This just fetched libraries present in the virtual env
         # Have to implement something where pip is not used (very few cases)
-        self.programRunner = ProgramRunner(self.goExecutable, self.config)
+        self.programRunner = ProgramRunner(self.goExecutable)
         self.programRunner.finished.connect(self.handleListLibraries)
 
+        # All the classes of the application
         self.contentDict = {
-            "Libraries": Library(self.config),
-            "Installer": Installer(self.config),
+            "Libraries": Library(config = self.config),
+            "Installer": Installer(config = self.config),
             "Analysis": Analysis(),
             "Dependency Tree": DependencyTree(),
             "Settings": Setting(),
@@ -94,10 +95,10 @@ class PacMan(QMainWindow):
         }
         self.libraries = {}
         self.navLists = list(self.contentDict.keys())
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(*self.config.get("application", {}).get("geometry", [100, 100, 800, 600]))
         self.locationPicked = False
-        self.setMinimumSize(800, 600)
-        self.setStyleSheet(colorScheme['main'])
+        self.setMinimumSize(*self.config.get("application", {}).get("minSize", [800, 600]))
+        self.setStyleSheet(self.config.get("stylesheet", {}).get("main", ""))
         # Main Layout
         mainWidget, mainLayout = self.main_layout()
 
@@ -126,26 +127,42 @@ class PacMan(QMainWindow):
     def main_layout(self):
         mainWidget = QWidget()
         mainLayout = QHBoxLayout(mainWidget)
-        mainLayout.setContentsMargins(0, 0, 0, 0)
-        mainLayout.setSpacing(0)
+        mainLayout.setContentsMargins(
+            *self.config.get('application', {}).get('mainLayout', {}).get('contentsMargin', [0, 0, 0, 0])
+        )
+        mainLayout.setSpacing(
+            self.config.get('application', {}).get('mainLayout', {}).get('spacing', 0)
+        )
         return mainWidget, mainLayout
 
     def sideBar(self):
         sideBar = QWidget()
-        sideBar.setObjectName("sidebar")
+        sideBar.setObjectName("sideBar")
         # sideBar.setFixedWidth(250)
-        sideBar.setMinimumWidth(100)
-        sideBar.setMaximumWidth(200)
+        sideBar.setMinimumWidth(
+            self.config.get("application", {}).get("sideBar", {}).get("minWidth", 100)
+        )
+        sideBar.setMaximumWidth(
+            self.config.get("application", {}).get("sideBar", {}).get("maxWidth", 200)
+        )
         sideBarLayout = QVBoxLayout(sideBar)
-        sideBarLayout.setContentsMargins(10, 10, 10, 10)
-        sideBarLayout.setSpacing(15)
+        sideBarLayout.setContentsMargins(
+            *self.config.get('application', {}).get('sideBar', {}).get('contentMargins', [10, 10, 10, 10])
+        )
+        sideBarLayout.setSpacing(
+            self.config.get('application', {}).get('sideBar', {}).get('spacing', 15)
+        )
 
         navList = QListWidget()
         navList.setObjectName("navList")
         for navListItems in self.navLists:
             navList.addItem(navListItems)
-        navList.setContentsMargins(0, 0, 0, 0)
-        navList.setSpacing(3)
+        navList.setContentsMargins(
+            *self.config.get('application', {}).get('sideBar', {}).get('navListContentMargin', [0, 0, 0, 0])
+        )
+        navList.setSpacing(
+            self.config.get('application', {}).get('sideBar', {}).get('navListSpacing', 3)
+        )
 
         sideBarLayout.addWidget(navList)
 
@@ -162,7 +179,9 @@ class PacMan(QMainWindow):
             label = self.contentDict[item_text]
             if index == 0:
                 buttonLayout = QHBoxLayout()
-                buttonLayout.setContentsMargins(0, 0, 0, 0)
+                buttonLayout.setContentsMargins(
+                    *self.config.get("application", {}).get("library", {}).get("labelLocation", {}).get("contentMargin", [0, 0, 0, 0])
+                )
                 self.labelLocation = QLabel("Select Path")
                 self.labelLocation.setObjectName("labelLocation")
                 self.labelLocationFinal = QLabel("Virtual Env:")
@@ -186,12 +205,16 @@ if __name__ == "__main__":
 
     configFilePath = "config.yaml"
 
-    config: dict = loadYaml(configFilePath)
+    config: dict = load_config(configFilePath)
     app.applicationVersion = config.get("application", {}).get("version", "")
-    font = loadFont(
-        config.get("paths", {}).get("fonts", ""),
-        config.get("application", {}).get("fontSize", 14))
-    app.setFont(font)
+
+    fontPath = config.get("paths", {}).get("fonts", {}).get("main", "")
+    if fontPath:
+        font = loadFont(
+            fontPath,
+            config.get("application", {}).get("fontSize", 14)
+        )
+        app.setFont(font)
     window = PacMan(config)
     window.show()
     sys.exit(app.exec())

@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QObject, pyqtSignal, pyqtSlot, QThread
 import subprocess
 
-class getLibraryDetails(QObject):
+class GetLibraryDetails(QObject):
     detailsWithName = pyqtSignal(str, dict)
     requestReady = pyqtSignal(str, str)
 
@@ -9,10 +9,13 @@ class getLibraryDetails(QObject):
         super().__init__(parent)
         self.threadRunner = QThread()
         self.worker = runCommandThroughPython()
-        self.requestReady.connect(self.worker.run)
         self.worker.moveToThread(self.threadRunner)
+        self.requestReady.connect(self.worker.run)
         self.worker.finished.connect(self.returnCommandOutput)
-        self.threadRunner.start()
+
+    def startThread(self):
+        if not self.threadRunner.isRunning():
+            self.threadRunner.start()
 
     def fetchDetailLibraryDetails(self, pythonExecPath, name):
         self.requestReady.emit(pythonExecPath, name)
@@ -30,8 +33,9 @@ class getLibraryDetails(QObject):
             self.detailsWithName.emit(name, infoDict)
 
     def stop(self):
-        self.threadRunner.quit()
-        self.threadRunner.wait()
+        if self.threadRunner.isRunning():
+            self.threadRunner.quit()
+            self.threadRunner.wait()
 
 class runCommandThroughPython(QObject):
     finished = pyqtSignal(str, int, bytes, bytes)
