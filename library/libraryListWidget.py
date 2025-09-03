@@ -1,9 +1,11 @@
-from PyQt6.QtWidgets import QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
+from PyQt6.QtWidgets import QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
 from library.toolTipLibrary import GetLibraryDetails
 from library.deleteLibrary import UninstallManager
 from PyQt6.QtGui import QIcon
+import sys
+from loadLibraries.goBrigde import ProgramRunner
 
 # import qtawesome as qta
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
@@ -26,6 +28,35 @@ class Library(QWidget):
         super().__init__()
 
         self.config = config
+
+        # I am on mac and never tested on windows Yet and linux but should work
+        if sys.platform == "win32" or sys.platform == "win64":
+            self.goExecutable = self.config.get(
+                "paths", {}).get("executablePaths", {}).get("library", {}).get("win32", ""
+            )
+        else:
+            self.goExecutable = self.config.get(
+                "paths", {}).get("executablePaths", {}).get("library", {}).get("darwin", ""
+            )
+        self.programRunner = ProgramRunner(self.goExecutable)
+        self.programRunner.finished.connect(self.handleListLibraries)
+
+        pageLayout = QVBoxLayout(self)
+        pageLayout.setContentsMargins(0, 0, 0, 0)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.setContentsMargins(
+            *self.config.get("application", {}).get("library", {}).get("labelLocation", {}).get("contentMargin", [0, 0, 0, 0])
+        )
+        self.labelLocation = QLabel("Select Path")
+        self.labelLocation.setObjectName("labelLocation")
+        self.labelLocationFinal = QLabel("Virtual Env:")
+        self.labelLocationFinal.setObjectName("labelLocationFinal")
+        self.labelLocation.setFixedHeight(30)
+        self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.labelLocation.mousePressEvent = self.selectLocation  # type: ignore
+        buttonLayout.addWidget(self.labelLocationFinal)
+        buttonLayout.addWidget(self.labelLocation, 1)
+        pageLayout.addLayout(buttonLayout)
         self.toolTipCache = {}
         self.setObjectName("library")
         self.setStyleSheet(self.config.get("stylesheet", {}).get("libraryListToolTip", ""))
@@ -45,7 +76,9 @@ class Library(QWidget):
 
         self.pythonExecPath = ""
         # For Main layout of the Library
-        self.libraryLayoutWithSearch = QVBoxLayout(self)
+
+        self.libraryLayoutWithSearch = QVBoxLayout()
+        pageLayout.addLayout(self.libraryLayoutWithSearch)
         self.libraryLayoutWithSearch.setContentsMargins(5, 2, 2, 2)
         self.libraryLayoutWithSearch.setSpacing(0)
 
@@ -94,6 +127,19 @@ class Library(QWidget):
 
     def setPythonExecPath(self, path):
         self.pythonExecPath = path
+
+    def handleListLibraries(self, pythonPath: str, libraries: list):
+        # self.contentDict['Libraries'].libraryList.clear()
+        self.setPythonExecPath(pythonPath)
+        self.addItems(libraries)
+
+
+    def selectLocation(self, event):
+        directoryPath = QFileDialog.getExistingDirectory(
+            self, "Select Directory")
+        if directoryPath:
+            self.labelLocation.setText(f"{directoryPath}")
+            self.programRunner.startGOProgram(directoryPath)
 
     def rankQuery(self, dataList, query):
         lowerQuery = query.lower()
