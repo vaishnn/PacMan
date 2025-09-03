@@ -3,12 +3,11 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import (
     QApplication, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
-    QWidget, QLabel, QStackedWidget, QFileDialog
+    QWidget, QLabel, QStackedWidget
 )
 from PyQt6.QtCore import Qt
 from helperFunctions.otherFunction import loadFont
 from helperFunctions.yamlProcessor import load_config
-from loadLibraries.goBrigde import ProgramRunner
 from library.libraryListWidget import Library
 from Installer.widgetToInstallLibrary import Installer
 
@@ -68,22 +67,6 @@ class PacMan(QMainWindow):
             self.config.get("paths", {}).get("images", {}).get("icon", {}).get("appLogo", "")
         ))
 
-        # I am on mac and never tested on windows Yet and linux but should work
-        if sys.platform == "win32" or sys.platform == "win64":
-            self.goExecutable = self.config.get(
-                "paths", {}).get("executablePaths", {}).get("library", {}).get("win32", ""
-            )
-        else:
-            self.goExecutable = self.config.get(
-                "paths", {}).get("executablePaths", {}).get("library", {}).get("darwin", ""
-            )
-
-        # Runner classes for GO Program, only made because I wanted to learn GO
-        # This just fetched libraries present in the virtual env
-        # Have to implement something where pip is not used (very few cases)
-        self.programRunner = ProgramRunner(self.goExecutable)
-        self.programRunner.finished.connect(self.handleListLibraries)
-
         # All the classes of the application
         self.contentDict = {
             "Libraries": Library(config = self.config),
@@ -111,13 +94,6 @@ class PacMan(QMainWindow):
         self.navItems.currentRowChanged.connect(
             self.contentStack.setCurrentIndex)
         self.setCentralWidget(mainWidget)
-
-    def selectLocation(self, event):
-        directoryPath = QFileDialog.getExistingDirectory(
-            self, "Select Directory")
-        if directoryPath:
-            self.labelLocation.setText(f"{directoryPath}")
-            self.programRunner.startGOProgram(directoryPath)
 
     def handleListLibraries(self, pythonPath: str, libraries: list):
         # self.contentDict['Libraries'].libraryList.clear()
@@ -177,22 +153,6 @@ class PacMan(QMainWindow):
             pageLayout = QVBoxLayout(page)
             pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
             label = self.contentDict[item_text]
-            if index == 0:
-                buttonLayout = QHBoxLayout()
-                buttonLayout.setContentsMargins(
-                    *self.config.get("application", {}).get("library", {}).get("labelLocation", {}).get("contentMargin", [0, 0, 0, 0])
-                )
-                self.labelLocation = QLabel("Select Path")
-                self.labelLocation.setObjectName("labelLocation")
-                self.labelLocationFinal = QLabel("Virtual Env:")
-                self.labelLocationFinal.setObjectName("labelLocationFinal")
-                self.labelLocation.setFixedHeight(30)
-                self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
-                self.labelLocation.mousePressEvent = self.selectLocation  # type: ignore
-                buttonLayout.addWidget(self.labelLocationFinal)
-                buttonLayout.addWidget(self.labelLocation, 1)
-                pageLayout.addLayout(buttonLayout)
-
             pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
             pageLayout.addWidget(label)
             contentStack.addWidget(page)
@@ -203,9 +163,14 @@ class PacMan(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    # Every Customization regarding color Icon and name exists here
     configFilePath = "config.yaml"
-
     config: dict = load_config(configFilePath)
+
+    app.setWindowIcon(QIcon(
+        config.get("paths", {}).get("images", {}).get("icon", {}).get("appLogo", "")
+    ))
+
     app.applicationVersion = config.get("application", {}).get("version", "")
 
     fontPath = config.get("paths", {}).get("fonts", {}).get("main", "")
