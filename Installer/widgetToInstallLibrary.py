@@ -14,6 +14,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
         self.colorInstall = QColor(128, 128, 128)
         self.installPixmap = QPixmap("icons/download.png")
         self.padding = 10
+        self._hovered_index = None
 
     def paint(self, painter: QPainter, option, index): #type: ignore
         # Let the base class handle background colors for selection, hover, etc.
@@ -24,6 +25,14 @@ class PyPIitemDelegate(QStyledItemDelegate):
         # Draw the hover effect
         if option.state & QStyle.StateFlag.State_MouseOver:
             painter.fillRect(rect, self.colorInstall)
+            if self._hovered_index != index:
+                self._hovered_index = index
+
+                if option.widget:
+                    option.widget.update()
+        else:
+            if self._hovered_index == index:
+
 
         itemData = index.data(DataRole)
         if not itemData:

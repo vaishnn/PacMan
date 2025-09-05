@@ -1,69 +1,76 @@
-from PyQt6.QtCore import QObject, QThread, QTimer, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 import requests
-import yaml
 
-def loadConfig(configFile: str) -> dict:
-    try:
-        with open(configFile, 'r') as file:
-            return yaml.safe_load(file)
-    except FileNotFoundError:
-        print(f"Config file '{configFile}' not found.")
-        return {}
-
-
-def requestInfo(API_ENDPOINT) -> dict:
-    response = requests.get(API_ENDPOINT)
+def requestInfo(API_ENDPOINT, timeout = 10) -> dict:
+    response = requests.get(API_ENDPOINT, timeout=timeout)
     if response.status_code == 200:
-        return response.json()
+        response_json = response.json()
+        response_json['response'] = 200
+        return response_json
     else:
         print(f"Request failed with status code {response.status_code}")
-        return {}
+        return {'response': 404}
 
 
 class RequestDetails(QObject):
 
-    fetchedDetails = pyqtSignal(dict)
-    fetchDetails = pyqtSignal(str)
-    def __init__(self, parent=None, config: dict = {}):
+    fetchedDetails = pyqtSignal(str, dict)
+    fetchDetails = pyqtSignal(str, str)
+    def __init__(self, parent=None, TIMEOUT: int = 1000):
         super().__init__(parent)
-        self.config = config
 
-        # Timer for killing the thread after long inactivity
-        self.timer = QTimer(self)
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.stopThread)
 
         # Thread
         self.threadR = QThread()
         self.worker = Worker()
         self.worker.moveToThread(self.threadR)
-        self.fetchDetails.connect(self.getDetails)
         self.fetchDetails.connect(self.worker.run)
-        self.worker.finished.connect(self.fetchedDetails)
-        self.worker.finished.connect(self.restartTimer)
+        self.worker.finished.connect(self.return_fetched_details)
+        self.threadR.finished.connect(self.deleteLater)
+        self.threadR.start()
 
-    def restartTimer(self):
-        self.timer.start(1000)
+    def return_fetched_details(self, library: str, details: dict):
+        self.fetchedDetails.emit(library, details)
 
-    @pyqtSlot(str)
-    def getDetails(self, libraryName: str):
-        if not self.threadR.isRunning():
-            self.threadR.start()
+
+    def fetch_details(self, API_ENDPOINT: str, library: str):
+        self.fetchDetails.emit(API_ENDPOINT, library)
 
     def stopThread(self):
-        self.timer.stop()
         self.threadR.quit()
         self.threadR.wait()
 
-class Worker(QObject):
-    finished = pyqtSignal(dict)
-    def __init__(self, parent=None):
-        super().__init__(parent)
 
-    @pyqtSlot(str)
-    def run(self, link: str):
-        details = requestInfo(link)
-        self.finished.emit(details)
+class Worker(QObject):
+    finished = pyqtSignal(str, dict)
+
+    @staticmethod
+    def subsetData(details: dict, information_retrieve:list = [
+        "summary",
+        "author",
+        "description",
+        "name",
+        "version",
+        "package_url",
+        "project_urls",
+        "requires_python"
+    ]):
+        final_details = {}
+        for key in information_retrieve:
+            if key in details.get("info", {}):
+                final_details[key] = details["info"][key]
+
+        final_details['response'] = details['response']
+        return final_details
+
+    @pyqtSlot(str, str)
+    def run(self, API_ENDPOINT: str, library: str):
+        details = requestInfo(API_ENDPOINT.format(library))
+        if details.get('response') == 200:
+            final_details = self.subsetData(details)
+        else:
+            final_details = details
+        self.finished.emit(library, final_details)
 
 if __name__ == "__main__":
     # Implement Test Class
