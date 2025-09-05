@@ -1,6 +1,6 @@
 # All the settings for the application
 application:
-  appName: "PacMan"
+  name: "PacMan"
   version: "0.1 Alpha"
   fontSize: 14
   minSize: [800, 250]
@@ -22,20 +22,34 @@ application:
       contentMargin: [0, 0, 0, 0]
   installer:
     contentMargin: [0, 0, 0, 0]
+    roundedCornersRadius: 5
 
 # Some Control Parameters
 controls:
   library:
     uninstallManagerTimout: 10000
+  installer:
+    detailsTimeout: 1000
 
 # Relative paths
 paths:
+  searchPaths:
+    darwin: # These are the most probable paths, It is possible to build a text field to accept some more places
+      - /Library/Frameworks/Python.framework/Versions
+      - /usr/local/bin
+      - /usr/bin
+      - /opt/homebrew/bin
+    win32: Needs to be implemented
+    win64: Needs to be implemented
+    linux: Needs to be implemented
   fonts:
     main: fonts/Figtree-Light.ttf
   images:
-    icon:
-      appLogo: icons/appLogo.png
-      delete: icons/delete.png
+    appLogo: icons/appLogo.png
+    uninstall: icons/uninstall.svg
+    install: icons/install.svg
+    installing: icons/installing.png
+    installed: icons/installed.png
   executablePaths:
     library:
       darwin: ./go_app
@@ -50,7 +64,7 @@ objects:
 # All the API's which are going to be used in this application
 api:
   pypi:
-    libraryDetails: https://pypi.org/pypi/{package}/json
+    libraryDetails: https://pypi.org/pypi/{}/json
     packageList: https://pypi.org/simple/
 
 # Colors definition
@@ -83,35 +97,91 @@ colors:
     primary: "#007ACC"
     primaryHover: "#005C99"
     primaryPressed: "#004C80"
+    install: "#e5e5e5"
 
 # Stylesheet with multiple sections using color variables
 stylesheet:
   main: |
+    #mainWindowContainer {
+      background-color: #2E2E2E;
+      border: 1px solid #555;
+      border-radius: 10px;
+    }
     QMainWindow, QWidget {
+    }
+    #library{
+      background-color: {{ colors.background.sidebar }};
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+    #dependencyTree{
+      background-color: {{ colors.background.sidebar }};
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+    #setting{
+      background-color: {{ colors.background.sidebar }};
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+    #about{
+      background-color: {{ colors.background.sidebar }};
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
+    }
+    #analysis {
+      background-color: {{ colors.background.sidebar }};
+      border-top-right-radius: 10px;
+      border-bottom-right-radius: 10px;
     }
     #sideBar {
         background-color: {{ colors.background.sidebar }};
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
     }
     #contentStack {
         background-color: {{ colors.background.main }};
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+    #controlBar {
+      background-color: #383838;
+      border-top-left-radius: 10px;
+    }
+
+    /* Hover effects for traffic light buttons */
+    #closeButton {
+      background-color: #FF605C;
+      border-radius: 6px; /* half of width/height */
+      border: none;
+    }
+    #minimizeButton {
+      background-color: #FFBD44;
+      border-radius: 6px; /* half of width/height */
+      border: none;
+    }
+    #maximizeButton {
+      background-color: #00CA4E;
+      border-radius: 6px; /* half of width/height */
+      border: none;
     }
     /* Navigation List */
     #navList {
-        border: none;
-        background-color: {{ colors.background.sidebar }};
+      border: none;
+      background-color: {{ colors.background.sidebar }};
     }
     #navList::item {
-        padding: 10px;
-        color: {{ colors.text.muted }};
-        border-radius: 5px;
+      padding: 10px;
+      color: {{ colors.text.muted }};
+      border-radius: 5px;
     }
     #navList::item:hover {
-        background-color: {{ colors.background.hover }};
+      background-color: {{ colors.background.hover }};
     }
     #navList::item:selected {
-        background-color: {{ colors.background.selected }};
-        color: {{ colors.text.bright }};
-        font-weight: bold;
+      background-color: {{ colors.background.selected }};
+      color: {{ colors.text.bright }};
+      font-weight: bold;
     }
     #labelLocation {
       background-color: {{ colors.border.dark }};
@@ -188,10 +258,6 @@ stylesheet:
       border-radius: 5px;
 
     }
-    #libraryList::item:selected {
-      background-color: {{ colors.background.selected }};
-      border-radius: 5px;
-    }
     #libraryList::item:hover {
       background-color: {{ colors.background.hover }};
       border-radius: 5px;
@@ -209,7 +275,7 @@ stylesheet:
       color: {{ colors.text.muted }};
       border-radius: 5px;
       border: none;
-      padding: 5px;
+      padding: 2px;
       font-size: 12px;
       }
     #deleteButtonFromLibraryListWidget:hover {
@@ -246,7 +312,7 @@ stylesheet:
       background-color: {{ colors.button.primaryPressed }};
     }
 
-  libraryListToolTip: |
+  tooltip: |
     QToolTip {
       background-color: {{ colors.border.dark }};
       color: {{ colors.text.muted }};
