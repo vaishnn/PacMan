@@ -1,10 +1,10 @@
 from PyQt6.QtWidgets import QComboBox, QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
 from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
-from helperFunctions.otherFunction import svg_to_icon
-from library.toolTipLibrary import GetLibraryDetails
-from library.deleteLibrary import UninstallManager
-from library.loadLibraries import FetchLibraryList
+from helper.other_functions import svg_to_icon
+from library.tool_tip_library import GetLibraryDetails
+from library.delete_library import UninstallManager
+from library.load_library import FetchLibraryList
 
 # import qtawesome as qta
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details

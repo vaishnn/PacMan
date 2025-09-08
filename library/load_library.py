@@ -4,7 +4,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QThread
 import os
 import csv
 
-from helperFunctions.findenv import find_virtual_envir
+from helper.find_local_envs import find_virtual_envir
 
 def get_site_packages_path(venv_path):
     """Gets the site-packages path for a given virtual environment."""
@@ -46,11 +46,12 @@ def get_installed_libraries_with_size(venv_path):
     using the definitive hybrid strategy.
     """
     bin_dir = "Scripts" if os.name == "nt" else "bin"
-    pip_exec = os.path.join(venv_path, bin_dir, "pip")
-    python_exec = os.path.join(venv_path, bin_dir, "python")
+    pip_exec = os.path.abspath(os.path.join(venv_path, bin_dir, "pip"))
+    python_exec = os.path.abspath(os.path.join(venv_path, bin_dir, "python"))
 
     if not os.path.isfile(pip_exec):
-        raise FileNotFoundError(f"pip executable not found at {pip_exec}")
+        pass
+        # raise FileNotFoundError(f"pip executable not found at {pip_exec}")
 
     result = subprocess.run([pip_exec, "list", "--format=json", "--disable-pip-version-check"], capture_output=True, text=True)
     if result.returncode != 0:

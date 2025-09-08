@@ -2,14 +2,12 @@ import os
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 import subprocess
 
-class InstallingVirtualEnv(QObject):
-
-
+class InitializingEnvironment(QObject):
     process = pyqtSignal(int, str)
     def __init__(self, parent = None) -> None:
         super().__init__(parent)
         self.threadQ = QThread()
-        self.worker = WorkerInstall()
+        self.worker = InitializingEnvironment_Worker()
         self.worker.moveToThread(self.threadQ)
         self.worker.process.connect(self.process.emit)
         self.threadQ.finished.connect(self.worker.deleteLater)
@@ -18,9 +16,13 @@ class InstallingVirtualEnv(QObject):
     def start(self, python_path, virtual_env_path, virtual_env_name):
         self.worker.run(python_path, virtual_env_path, virtual_env_name)
 
+    def stop(self):
+        if self.threadQ.isRunning():
+            self.threadQ.quit()
+            self.threadQ.wait()
 
-class WorkerInstall(QObject):
 
+class InitializingEnvironment_Worker(QObject):
     process = pyqtSignal(int, str)
     def run(self, python_path, virtual_env_path, virtual_env_name):
         self.process.emit(0, "")

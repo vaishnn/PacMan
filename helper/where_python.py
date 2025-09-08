@@ -2,7 +2,6 @@ import re
 import os
 from pathlib import Path
 import subprocess
-import pprint
 
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 
@@ -83,4 +82,4 @@ class Worker(QObject):
         self.finished.emit(where_python)
 
 if __name__ == "__main__":
-    pprint.pprint(where_python_location())
+    pass
