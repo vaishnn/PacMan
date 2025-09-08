@@ -4,14 +4,11 @@ from PyQt6.QtWidgets import (
     QComboBox, QFileDialog, QFrame, QPushButton, QSizePolicy, QVBoxLayout, QLabel, QStackedWidget, QWidget
 )
 from PyQt6.QtCore import  QEasingCurve, QPropertyAnimation, QSize, Qt, pyqtSignal
-from others.control_bar import ControlBar
-from helper.where_python import PythonInterpreters
-from worker.initialize_new_virtual_env import InitializingEnvironment
-from helper.helper_classes import LineEdit, Toast
-from worker.find_virtual_env import FindEnvironment
-
-
-
+from ui.control_bar import ControlBar
+from helpers.where_python import PythonInterpreters
+from workers.initialize_new_virtual_env import InitializingEnvironment
+from helpers.helper_classes import LineEdit, Toast
+from workers.find_virtual_env import FindEnvironment
 
 class OnboardingPage(QWidget):
 
@@ -106,7 +103,7 @@ class OnboardingPage(QWidget):
         layout = QVBoxLayout(container)
         spinner_label = QLabel()
         spinner_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        movie = QMovie("./icons/spinner.gif")
+        movie = QMovie("./assets/icons/spinner.gif")
         movie.setScaledSize(QSize(32, 32))
         spinner_label.setMovie(movie)
         layout.addWidget(spinner_label)
@@ -175,19 +172,19 @@ class OnboardingPage(QWidget):
         python_path = "".join(self.drop_down_for_creating_python_env.currentText().split(":")[1:]).strip()
         virtual_env_path = self.project_location
         text = self.name_of_venv.toPlainText()
+        env_names = [env.split(os.path.sep)[-1] for env in self.list_of_virtual_env]
         if text == "":
             text = "venv"
-
-        if text in self.list_of_virtual_env:
+        if text in env_names:
             self.commit_action("Same name environment already exist")
         else:
             self.installing_virtual_env.start(python_path, virtual_env_path, text)
 
-    def _update_widget(self, code: int, venv_path: str):
+    def _update_widget(self, code: int, venv_path: str, venv_name: str, all_venv_names):
         if code == 0:
             self.stacked_widget.setCurrentIndex(1)
         if code == 1:
-            self.location_selected.emit(self.project_location, venv_path, venv_path.split(os.path.sep)[-1].strip())
+            self.location_selected.emit(venv_path, venv_name, all_venv_names)
         pass
 
     def commit_action(self, message: str):

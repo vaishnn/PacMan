@@ -1,13 +1,15 @@
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
 from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
-from helper.other_functions import svg_to_icon
+
 from library.tool_tip_library import GetLibraryDetails
 from library.delete_library import UninstallManager
 from library.load_library import FetchLibraryList
 
-# import qtawesome as qta
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
+
+
 
 class Library(QWidget):
     """
@@ -22,13 +24,15 @@ class Library(QWidget):
     """
     listLibraryRefreshed = pyqtSignal()
     show_env_box = pyqtSignal()
+    libraries_emitter = pyqtSignal(list)
+    current_state = pyqtSignal(str, str) # Current state of selected Project Folder and Virtual Env name selected
+    python_exec = pyqtSignal(str)
     def __init__(self, config, parent=None):
         super().__init__(parent)
         if not hasattr(self, 'config'):
             self.config = config
         self.setObjectName("library")
         self._init_properties()
-        self._init_program_runner()
         self._init_managers()
         self._init_ui()
         self._connect_signals()
@@ -41,15 +45,11 @@ class Library(QWidget):
         self.pythonExecPath = ""
         self.already_inside_project = False
 
-    def _init_program_runner(self):
-        self.fetch_list_of_libraries = FetchLibraryList()
-        self.fetch_list_of_libraries.libraries.connect(self.handleListLibraries)
-
     def _init_managers(self):
         """Initializes helper classes for fetching details and uninstalling."""
         # Tooltip Fetching Manager
+        self.fetch_list_of_libraries = FetchLibraryList()
         self.getLibraryDetails = GetLibraryDetails()
-
 
         # Uninstall Manager
         uninstall_timeout = int(self.config.get("controls", {}).get("library", {}).get("uninstallManagerTimout", 10000))
@@ -68,7 +68,7 @@ class Library(QWidget):
 
         # Create a container for the search bar and list
         library_section_layout = QVBoxLayout()
-        library_section_layout.setContentsMargins(5, 2, 2, 2)
+        library_section_layout.setContentsMargins(0, 2, 0, 0)
         library_section_layout.setSpacing(0)
 
         self._setup_search_bar(library_section_layout)
@@ -82,38 +82,38 @@ class Library(QWidget):
         margin = self.config.get("ui", {}).get("window", {}).get('library', {}).get("labelLocation", {}).get("contentMargin", [0, 0, 0, 0])
         button_layout.setContentsMargins(*margin)
 
-        self.labelLocationFinal = QLabel("Virtual Env:")
-        self.labelLocationFinal.setObjectName("labelLocationFinal")
-
+        # Label for selecting path
         self.labelLocation = QLabel("Select Path")
         self.labelLocation.setObjectName("labelLocation")
-
         self.labelLocation.setFixedHeight(30)
         self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
         self.labelLocation.mousePressEvent = self.selectLocation  # type: ignore
 
+        # for changing the virtual env in the same directory
         self.change_env_in_same_directory = QComboBox()
         self.change_env_in_same_directory.setFixedHeight(30)
         self.change_env_in_same_directory.setFixedWidth(0)
         self.change_env_in_same_directory.setVisible(False)
         self.change_env_in_same_directory.currentIndexChanged.connect(self._change_virtual_env)
-        button_layout.addWidget(self.labelLocationFinal)
+
+
         button_layout.addWidget(self.labelLocation, 1)
         button_layout.addWidget(self.change_env_in_same_directory, 2)
         parent_layout.addLayout(button_layout)
 
     def _expand_change_env(self):
+        """Animtes the virtual env selector"""
         if self.animate_env_box:
             return
 
         self.animate_env_box = True
         self.change_env_in_same_directory.setVisible(True)
         # final_width = self.change_env_in_same_directory.sizeHint().height()
-        final_width = 60
+        final_width = 200
         self.animation = QPropertyAnimation(
             self.change_env_in_same_directory, b'maximumWidth'
         )
-        self.animation.setDuration(200)
+        self.animation.setDuration(1000)
         self.animation.setStartValue(0)
         self.animation.setEndValue(final_width)
         self.animation.setEasingCurve(QEasingCurve.Type.InOutQuart)
@@ -121,24 +121,12 @@ class Library(QWidget):
             lambda: setattr(self, 'animate_env_box', False)
         )
         self.animation.start()
-        self.change_env_in_same_directory.setStyleSheet("""
-        QComboBox {
-          border: none;
-          background: transparent;
-          padding-right: 5px; /* Remove space for arrow */
-        }
-        QComboBox::drop-down {
-          border: none;
-          background: transparent;
-          width: 20px; /* Hide the drop-down button */
-        }
-        QComboBox::down-arrow {
-          image: url(./icons/fold.svg);
-        }
-        """)
 
     def _change_virtual_env(self):
-        self.selectLocationFromMain(self.labelLocation.text(), self.change_env_in_same_directory.currentText(), "")
+        current_location = self.labelLocation.text()
+        current_virtual_env = self.change_env_in_same_directory.currentText().split(":")[0].strip()
+        self.current_state.emit(current_location, current_virtual_env)
+        self.selectLocationFromMain(current_location, current_virtual_env, "")
 
     def _setup_search_bar(self, parent_layout):
         """Creates the search bar and its associated typing timer."""
@@ -170,28 +158,31 @@ class Library(QWidget):
 
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
+        self.fetch_list_of_libraries.libraries.connect(self.handleListLibraries)
         self.uninstallManager.uninstallFinished.connect(self.onUninstallFinished)
         self.getLibraryDetails.detailsWithName.connect(self.getLibraryDetailsThroughClass)
         self.show_env_box.connect(self._expand_change_env)
         self.listLibraryRefreshed.connect(self.getLibraryDetails.startThread)
         self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
 
-
     def whenTimerForToolTipIsFinished(self):
         self.listLibraryRefreshed.emit()
 
     def setPythonExecPath(self, path):
         self.pythonExecPath = path
+        self.python_exec.emit(path)
 
     def handleListLibraries(self, pythonPath: str, libraries: list, virtual_env_names: list):
         # self.contentDict['Libraries'].libraryList.clear()
+        self.libraries_emitter.emit(libraries)
         if not self.already_inside_project:
+
             self._expand_change_env()
             self.already_inside_project = True
             self.change_env_in_same_directory.clear()
             if libraries:
                 for envs in virtual_env_names:
-                    self.change_env_in_same_directory.addItem(envs)
+                    self.change_env_in_same_directory.addItem(envs, 20)
         self.setPythonExecPath(pythonPath)
         self.addItems(libraries)
 
@@ -202,7 +193,7 @@ class Library(QWidget):
         if directoryPath:
             self.already_inside_project = False
             self.labelLocation.setText(f"{directoryPath}")
-            self.fetch_list_of_libraries.get_details(directoryPath)
+            self.fetch_list_of_libraries.get_details(directoryPath, "")
 
     def selectLocationFromMain(self, directoryPath, venv_name, virtual_envs):
             self.labelLocation.setText(f"{directoryPath}")
@@ -225,7 +216,6 @@ class Library(QWidget):
         self.searchBar.show()
         self.all_items_data = itemsList
         self.sortItemsList(True)
-
 
     def human_readable_size(self, size: int) -> str:
         if size/(1024*1024*1024)<0.1:
@@ -256,7 +246,6 @@ class Library(QWidget):
         self.itemMap.clear()
 
         for item in items:
-
             listLibraryWidget = QWidget()
             listLibraryWidget.setObjectName("listLibraryWidget")
             listLibraryWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -281,7 +270,7 @@ class Library(QWidget):
             uninstallButton = QPushButton()
             uninstallButton.setFixedSize(30, 30)
             uninstallButton.setObjectName("deleteButtonFromLibraryListWidget")
-            uninstallButton.setIcon(svg_to_icon(
+            uninstallButton.setIcon(QIcon(
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall"),
             ))
             uninstallButton.setIconSize(QSize(22, 22))
@@ -303,7 +292,6 @@ class Library(QWidget):
             self.itemMap[item["name"]] = (listLibraryWidget, listItem)
             uninstallButton.clicked.connect(
                 lambda checked=False, packageName=item["name"]: self.startLibraryUninstaller(packageName))
-            # self.getLibraryDetails.fetchDetailLibraryDetails(item["name"])
         if emit:
             self.listLibraryRefreshed.emit()
         else:

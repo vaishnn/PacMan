@@ -95,3 +95,8 @@ coverage.xml
 # Package specific files
 *.so
 .Python
+
+# Builds
+dist/*
+build/*
+setup.py

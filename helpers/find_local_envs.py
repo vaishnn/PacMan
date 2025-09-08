@@ -118,12 +118,12 @@ def find_virtual_envir(path: str) -> list[Virtual_Env]:
                 os.path.isfile(os.path.join(bin_path, exe)) for exe in activate_exec
             )
             if has_python and has_pip and has_activate:
-                python_present = [python_exec[index] for index, python_exe in enumerate(pythons) if python_exe]
-                pip_present = [pip_exec[index] for index, pip_exe in enumerate(pips) if pip_exe]
+                python_present = [os.path.abspath(os.path.join(bin_path, python_exec[index])) for index, python_exe in enumerate(pythons) if python_exe]
+                pip_present = [os.path.abspath(os.path.join(bin_path, pip_exec[index])) for index, pip_exe in enumerate(pips) if pip_exe]
                 python_version = "Unknown"
                 try:
                     result = subprocess.run(
-                        [python_exec[0], "--version"],
+                        [python_present[0], "--version"],
                         capture_output=True,
                         text=True,
                         check=False,

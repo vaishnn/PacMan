@@ -65,6 +65,7 @@ ui:
     border:
       light: "#555555"
       dark: "#3C3C3C"
+      # dark: transparent
     button:
       primary: "#007ACC"
       primaryHover: "#005C99"
@@ -137,7 +138,7 @@ stylesheet:
     #labelLocation {
       background-color: {{ ui.colors.border.dark }};
       color: {{ ui.colors.text.muted }};
-      border: 0px solid {{ ui.colors.border.light }};
+      border: 1px solid {{ ui.colors.border.light }};
       border-radius: {{ ui.dimensions.borderRadius.medium }};
       padding-left: {{ ui.dimensions.padding.large }};
       padding-right: {{ ui.dimensions.padding.large }};
@@ -210,24 +211,29 @@ stylesheet:
       border-radius: {{ ui.dimensions.borderRadius.medium }};
       color: {{ ui.colors.text.normal }};
     }
-    #onboardingWidget QComboBox, #OnboardingWidget QLineEdit, QTextEdit {
+    #onboardingWidget #OnboardingWidget QLineEdit, QTextEdit {
       background-color: {{ ui.colors.background.inputSecondary }};
       color: {{ ui.colors.text.normal }};
       border-radius: {{ ui.dimensions.borderRadius.small }};
       padding: {{ ui.dimensions.padding.small }};
     }
     QComboBox {
-      border: none;
-      background: transparent;
-      padding-right: 5px; /* Remove space for arrow */
+      background-color: {{ ui.colors.background.inputSecondary }};
+      color: {{ ui.colors.text.normal }};
+      border-radius: {{ ui.dimensions.borderRadius.small }};
+      padding: {{ ui.dimensions.padding.small }};
+    }
+    QComboBox:hover {
+      background-color: {{ ui.colors.background.hover }};
     }
     QComboBox::drop-down {
       border: none;
       background: transparent;
       width: 20px; /* Hide the drop-down button */
+      padding-top: 3px;
     }
     QComboBox::down-arrow {
-      image: url(./icons/fold.svg);
+      image: ./assets/icons/fold.png;
     }
 
   initScreen: |

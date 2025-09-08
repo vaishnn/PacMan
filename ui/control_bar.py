@@ -67,19 +67,19 @@ class ControlBar(QWidget):
     def _setup_buttons(self):
 
         # Close Button
-        self.close_button = HoverIconButton(icon_path="./icons/close.svg")
+        self.close_button = HoverIconButton(icon_path="./assets/icons/close.svg")
         self.close_button.setObjectName("closeButton")
         self.close_button.setFixedSize(12, 12)
         self.close_button.clicked.connect(self.parent_window.close)
 
         # Minimize Button
-        self.minimize_button = HoverIconButton(icon_path="./icons/minimize.svg")
+        self.minimize_button = HoverIconButton(icon_path="./assets/icons/minimize.svg")
         self.minimize_button.setObjectName("minimizeButton")
         self.minimize_button.setFixedSize(12, 12)
         self.minimize_button.clicked.connect(self.parent_window.showMinimized)
 
         # Maximize Button
-        self.maximize_button = HoverIconButton(icon_path="./icons/maximize.svg")
+        self.maximize_button = HoverIconButton(icon_path="./assets/icons/maximize.svg")
         self.maximize_button.setObjectName("maximizeButton")
         self.maximize_button.setFixedSize(12, 12)
         self.maximize_button.clicked.connect(self.toggle_maximize)

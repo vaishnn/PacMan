@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-from helper.find_local_envs import find_virtual_envir
+from helpers.find_local_envs import find_virtual_envir
 
 
 class FindEnvironment(QObject):

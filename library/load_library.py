@@ -3,8 +3,7 @@ import subprocess
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 import os
 import csv
-
-from helper.find_local_envs import find_virtual_envir
+from helpers.find_local_envs import find_virtual_envir
 
 def get_site_packages_path(venv_path):
     """Gets the site-packages path for a given virtual environment."""
@@ -124,18 +123,20 @@ def get_installed_libraries_with_size(venv_path):
 class FetchLibraryList(QObject):
     """Seperate Thread for Get's list of library with version and space it's sharing using record and some naming convention"""
     finished = pyqtSignal(int, list)
+    fetch = pyqtSignal(str, str)
     libraries = pyqtSignal(str, list, list)
     def __init__(self):
         super().__init__()
         self.threadRunner = QThread()
         self.worker = GoWorker()
         self.worker.moveToThread(self.threadRunner)
+        self.fetch.connect(self.worker.run)
         self.worker.finished.connect(self.libraries.emit)
         self.threadRunner.finished.connect(self.worker.deleteLater)
         self.threadRunner.start()
 
     def get_details(self, project_path, virtual_env = ""):
-        self.worker.run(project_path, virtual_env)
+        self.fetch.emit(project_path, virtual_env)
 
     def stop(self):
         if self.threadRunner.isRunning():
@@ -147,21 +148,25 @@ class FetchLibraryList(QObject):
 
 class GoWorker(QObject):
     """
-    Worker class for executing GO programs
+    Worker class for getting list of libraries
     """
     finished  = pyqtSignal( str, list, list)
-    def run(self, project_path, virtual_env = ""):
+    def run(self, project_path, virtual_env_name = ""):
+
         try:
-            virtual_env_names = [env.venv_name for env in find_virtual_envir(project_path)]
-            if virtual_env == "":
-                virtual_env = virtual_env_names[0]
+            virtual_env_paired_with_python_version = []
+            virtual_envs = find_virtual_envir(project_path)
+            for virtual_environment in virtual_envs:
+                virtual_env_paired_with_python_version.append(virtual_environment.venv_name+ ":   " +
+                    f"{virtual_environment.python_version}")
+            if virtual_env_name == "":
+                virtual_env_name = virtual_env_paired_with_python_version[0].split(":")[0].strip()
 
-            venv_path = os.path.join(project_path, virtual_env)
+            venv_path = os.path.abspath(os.path.join(project_path, virtual_env_name))
             python_exec, details = get_installed_libraries_with_size(venv_path)
-            self.finished.emit(python_exec, details, virtual_env_names)
-        except FileNotFoundError:
-            self.finished.emit(-1, "Executable Not Found")
-        except Exception as e:
-            self.finished.emit(-1, f"Some error idk {e}")
 
-get_installed_libraries_with_size(".venv")
+            self.finished.emit(python_exec, details, virtual_env_paired_with_python_version)
+        except FileNotFoundError:
+            self.finished.emit("", "", [], "Executable Not Found")
+        except Exception as e:
+            self.finished.emit("", "", [], f"Some error idk {e}")

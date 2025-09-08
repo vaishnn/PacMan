@@ -2,13 +2,10 @@ from PyQt6.QtCore import QObject, QThread, pyqtSignal
 import requests
 from bs4 import BeautifulSoup
 import os
+import json
 
 # This code is specifically for mac
 # Note to self: add some if else statements for windows execution
-
-
-
-
 def get_app_support_directory(appName: str = "PacMan") -> str:
     # Just creates the directory if it doesn't exist
     app_support_dir = os.path.expanduser(f"~/Library/Application Support/{appName}")
@@ -16,14 +13,14 @@ def get_app_support_directory(appName: str = "PacMan") -> str:
 
     return app_support_dir
 
-def save_file(data: list, app_name: str = "PacMan", file_name: str = "libraryList.txt"):
+def save_file(data: list, app_name: str = "PacMan", file_name: str = "library_list.txt"):
     # Saves Data in a pre-defined directory
     app_support_dir = get_app_support_directory(app_name)
     file_path = os.path.join(app_support_dir, file_name)
     with open(file_path, "w") as file:
-        file.write("\n".join(data))
+        json.dump(data, file, indent=4)
 
-def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "libraryList.txt") -> list:
+def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "library_list.txt") -> list:
     # Downloads Data from PyPi.org
     url = "https://pypi.org/simple/"
     headers = {"User-Agent": "insomnia/11.4.0"}
@@ -33,7 +30,7 @@ def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "libraryL
     save_file(librarylist, app_name, file_name)
     return librarylist
 
-def load_data(app_name = "PacMan", file_name = "libraryList.txt") -> list:
+def load_data(app_name = "PacMan", file_name = "library_list.txt") -> list:
     # Loads Data from a pre-defined directory
     try:
         appSupportDir = get_app_support_directory(app_name)
@@ -41,40 +38,39 @@ def load_data(app_name = "PacMan", file_name = "libraryList.txt") -> list:
 
         if os.path.exists(filePath):
             with open(filePath, "r") as file:
-                data = file.read().splitlines()
-
+                data = json.load(file)
         else:
             data = download_data_from_pypi(app_name, file_name)
     except Exception as e:
         data = []
         print(f"Error loading data: {e}")
-    if data:
-        data = [{"name": name} for name in data]
     return data
 
 class PyPiRunner(QObject):
+    """This class is for fetching libraries for PyPI"""
     listOfLibraries = pyqtSignal(list)
-    def __init__(self, appName: str = "PacMan", fileName: str = "libraryList.txt"):
+    def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
         super().__init__()
-        self.threadRunner = QThread()
+        self.thread_runner = QThread()
         self.worker = PyPiWorker(appName, fileName)
-        self.worker.moveToThread(self.threadRunner)
+        self.worker.moveToThread(self.thread_runner)
 
-        self.worker.finished.connect(self.threadRunner.quit)
-        self.threadRunner.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread_runner.quit)
+        self.thread_runner.started.connect(self.worker.run)
         self.worker.listOfLibraries.connect(self.listOfLibraries)
 
         self.worker.finished.connect(self.worker.deleteLater)
-        self.threadRunner.finished.connect(self.threadRunner.deleteLater)
+        self.thread_runner.finished.connect(self.thread_runner.deleteLater)
 
 
     def startFetching(self):
-        self.threadRunner.start()
+        self.thread_runner.start()
 
 class PyPiWorker(QObject):
+    """Worker for fetching libraries from PyPI"""
     listOfLibraries = pyqtSignal(list)
     finished = pyqtSignal()
-    def __init__(self, appName: str = "PacMan", fileName: str = "libraryList.txt"):
+    def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
         super().__init__()
         self.appName = appName
         self.fileName = fileName

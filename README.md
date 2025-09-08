@@ -1,4 +1,6 @@
 # PacMan
+![PacMan ScreenShot](website/Images/PacMan.png)
+
 
 PacMan is a graphical desktop application for managing Python packages, built with PyQt6. It provides a user-friendly interface to interact with `pip` and PyPI, simplifying the process of installing, uninstalling, and managing Python libraries.
 

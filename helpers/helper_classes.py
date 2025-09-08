@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QObject, QTimer, Qt, pyqtSignal
-from PyQt6.QtGui import QKeyEvent
-from PyQt6.QtWidgets import QLabel, QTextEdit, QWidget
+from PyQt6.QtGui import QKeyEvent, QPainter
+from PyQt6.QtWidgets import QComboBox, QLabel, QStyleOptionComboBox, QStyledItemDelegate, QTextEdit, QWidget
 
 class LineEdit(QTextEdit):
     def keyPressEvent(self, event: QKeyEvent): #type: ignore
@@ -88,3 +88,36 @@ class IntNotifier(QObject):
 
     def __repr__(self):
         return f"IntNotifier({self._value})"
+
+class HTMLDelegate(QStyledItemDelegate):
+    """They may be used later"""
+    def paint(self, painter, option, index):
+        text = index.data()
+        label = QLabel()
+        label.setTextFormat(Qt.TextFormat.RichText)
+        label.setText(text)
+        label.setFixedSize(option.rect.size())
+        painter.save() # type: ignore
+        painter.translate(option.rect.topLeft()) # type: ignore
+        label.render(painter)
+        painter.restore() # type: ignore
+
+class HTMLComboBox(QComboBox):
+    """They may be used later"""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+    def paintEvent(self, event): # type: ignore
+        super().paintEvent(event)
+        painter = QPainter(self)
+        option = QStyleOptionComboBox()
+        option.rect = self.rect()
+        index = self.model().index(self.currentIndex(), self.modelColumn(), self.rootModelIndex())# type: ignore
+        text = index.data()
+        label = QLabel()
+        label.setTextFormat(Qt.TextFormat.RichText)
+        label.setText(text)
+        label.setFixedSize(option.rect.size())
+        painter.save()
+        painter.translate(option.rect.topLeft())
+        label.render(painter)
+        painter.restore()

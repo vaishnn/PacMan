@@ -2,14 +2,17 @@ from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 import requests
 
 def requestInfo(API_ENDPOINT, timeout = 10) -> dict:
-    response = requests.get(API_ENDPOINT, timeout=timeout)
-    if response.status_code == 200:
-        response_json = response.json()
-        response_json['response'] = 200
-        return response_json
-    else:
-        # print(f"Request failed with status code {response.status_code}")
-        return {'response': 404}
+    try:
+        response = requests.get(API_ENDPOINT, timeout=timeout)
+        if response.status_code == 200:
+            response_json = response.json()
+            response_json['response'] = 200
+            return response_json
+        else:
+            # print(f"Request failed with status code {response.status_code}")
+            return {'response': 404}
+    except ConnectionError:
+        return {'response': 500}
 
 
 class RequestDetails(QObject):

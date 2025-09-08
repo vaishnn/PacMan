@@ -2,14 +2,14 @@
 paths:
   assets:
     fonts:
-      main: "fonts/Figtree-Light.ttf"
+      main: "assets/fonts/Figtree-Light.ttf"
     images:
-      appLogo: "icons/appLogo.png"
-      uninstall: "icons/uninstall.svg"
-      install: "icons/install.svg"
-      installing: "icons/installing.png"
-      installed: "icons/installed.png"
-      arrowDown: "icons/fold.svg"
+      appLogo: "assets/icons/appLogo.png"
+      uninstall: "assets/icons/uninstall.png"
+      install: "assets/icons/install.png"
+      installing: "assets/icons/installing.png"
+      installed: "assets/icons/installed.png"
+      arrowDown: "assets/icons/fold.png"
   executables:
     library:
       darwin: "./go_app"
