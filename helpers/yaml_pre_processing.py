@@ -1,5 +1,5 @@
 import re
-import pprint
+import cProfile
 import yaml
 
 def load_yaml(path: str) -> dict:
@@ -75,4 +75,8 @@ def load_config(ui_file_path="config/ui.yaml",
     return config
 
 if __name__ == "__main__":
-    pprint.pprint(load_config("config/ui.yaml", "config/controls.yaml", "config/paths.yaml", "config/application.yaml"))
+    profiler = cProfile.Profile()
+    profiler.enable()
+    print(load_config("config/ui.yaml", "config/controls.yaml", "config/paths.yaml", "config/application.yaml"))
+    profiler.disable()
+    profiler.print_stats(sort='time')

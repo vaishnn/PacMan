@@ -1,17 +1,34 @@
 import os
+import subprocess
+import json
 from PyQt6.QtGui import QMovie
 from PyQt6.QtWidgets import (
     QComboBox, QFileDialog, QFrame, QPushButton, QSizePolicy, QVBoxLayout, QLabel, QStackedWidget, QWidget
 )
-from PyQt6.QtCore import  QEasingCurve, QPropertyAnimation, QSize, Qt, pyqtSignal
+from PyQt6.QtCore import  QEasingCurve, QObject, QPropertyAnimation, QSize, QThread, Qt, pyqtSignal
 from ui.control_bar import ControlBar
-from helpers.where_python import PythonInterpreters
-from workers.initialize_new_virtual_env import InitializingEnvironment
+from workers.find_python_interepreaters import PythonInterpreters
+# from workers.initialize_new_virtual_env import InitializingEnvironment
 from helpers.helper_classes import LineEdit, Toast
-from workers.find_virtual_env import FindEnvironment
+# from workers.find_virtual_env import FindEnvironment
+
+class StreamWorker(QObject):
+
+    data_recieved = pyqtSignal(list)
+    start = pyqtSignal(str, str)
+    def __init__(self):
+        super().__init__()
+        self.start.connect(self.run)
+
+    def start_fetching(self, location, exe_loc):
+        self.start.emit(location, exe_loc)
+
+    def run(self, location, executables_location):
+        result = subprocess.run([executables_location, location], capture_output=True, text=True)
+
+        self.data_recieved.emit(json.loads(result.stdout))
 
 class OnboardingPage(QWidget):
-
     finished = pyqtSignal()
     location_selected = pyqtSignal(str, str, list)
     find_env_in_pc = pyqtSignal()
@@ -26,8 +43,8 @@ class OnboardingPage(QWidget):
         self.animation_running = False
         self.current_env = []
 
-        self.installing_virtual_env = InitializingEnvironment()
-        self.installing_virtual_env.process.connect(self._update_widget)
+        # self.installing_virtual_env = InitializingEnvironment()
+        # self.installing_virtual_env.process.connect(self._update_widget)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -41,6 +58,7 @@ class OnboardingPage(QWidget):
         self.controlBar = ControlBar(parent, config)
         self.frame_layout.addWidget(self.controlBar)
 
+        self._start_virtual_env_subprocess()
 
         self.stacked_widget = QStackedWidget()
         self.frame_layout.addWidget(self.stacked_widget)
@@ -53,7 +71,6 @@ class OnboardingPage(QWidget):
         self.stacked_widget.addWidget(self._loading_virtual_env())
         self.stacked_widget.setCurrentIndex(0)
 
-
     def _create_page_container(self, name, margin = [0, 0, 0, 0]):
         container = QWidget()
         container.setObjectName(name)
@@ -61,6 +78,14 @@ class OnboardingPage(QWidget):
         layout.setContentsMargins(*margin)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         return container
+
+    def _start_virtual_env_subprocess(self):
+        self.thread_env = QThread()
+        self.worker = StreamWorker()
+        self.worker.moveToThread(self.thread_env)
+        self.worker.data_recieved.connect(self._display_env)
+        self.thread_env.start()
+
 
     def _create_location_page(self):
         container = QWidget()
@@ -110,11 +135,10 @@ class OnboardingPage(QWidget):
         movie.start()
         return container
 
-
     def _populate_environment_container(self):
         layout = QVBoxLayout(self.select_env)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.find_env = FindEnvironment()
+
         self.python_interpreters = PythonInterpreters()
 
         self.found_virtual_envs_label = QLabel("Searching for existing virtual environments...")
@@ -141,7 +165,7 @@ class OnboardingPage(QWidget):
         self.create_virtual_env_button.clicked.connect(self._create_virtual_env)
         self.create_virtual_env_button.setObjectName("createVirtualEnvButton")
 
-        self.find_env.finished.connect(self._display_env)
+        # self.find_env.finished.connect(self._display_env)
         self.python_interpreters.release_details.connect(
             self._display_python_interpreters
         )
@@ -162,9 +186,9 @@ class OnboardingPage(QWidget):
         curr_dir = "".join(self.drop_down_for_selecting_virtual_env.currentText().split(":")[1:]).strip()
         virtual_envs = []
         for env in self.env:
-            virtual_envs.append(env.venv_name)
-            if env.venv_path == curr_dir:
-                current_venv = env.venv_name
+            virtual_envs.append(env.get('venv_name'))
+            if env.get('venv_path') == curr_dir:
+                current_venv = env.get('venv_name')
 
         self.location_selected.emit(self.project_location, current_venv, virtual_envs)
 
@@ -178,7 +202,8 @@ class OnboardingPage(QWidget):
         if text in env_names:
             self.commit_action("Same name environment already exist")
         else:
-            self.installing_virtual_env.start(python_path, virtual_env_path, text)
+            pass
+            # self.installing_virtual_env.start(python_path, virtual_env_path, text)
 
     def _update_widget(self, code: int, venv_path: str, venv_name: str, all_venv_names):
         if code == 0:
@@ -198,10 +223,9 @@ class OnboardingPage(QWidget):
 
         directory = QFileDialog.getExistingDirectory(self, "Selecting Directory")
         if directory:
+            self.worker.start_fetching(directory, "./findLocalEnv")
             self.project_location = directory
             self.browse_label.setText(f"Selected: {directory}")
-
-            self.find_env.emit_get_env(directory)
             self.python_interpreters.get_interpreters()
             self.find_env_in_pc.emit()
 
@@ -230,9 +254,11 @@ class OnboardingPage(QWidget):
             # found_env = "\n".join([f"{item['path']} : {item['version']}" for item in env])
             self.found_virtual_envs_label.setText(f"found {len(env)} virtual environments")
             for item in env:
-                self.list_of_virtual_env.append(item.venv_path)
+                print(item)
+                self.list_of_virtual_env.append(item.get('venv_path'))
+
                 self.drop_down_for_selecting_virtual_env.addItem(
-                    f"{item.python_version}: {item.venv_path}")
+                    f"{item.get('python_version')}: {item.get('venv_path')}")
             self.drop_down_for_selecting_virtual_env.setVisible(True)
             self.use_selecting_virtual_env_button.setVisible(True)
         else:

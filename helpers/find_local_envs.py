@@ -2,54 +2,6 @@ import os
 import subprocess
 import sys
 
-default_packages = {
-    "pip": True,
-    "setuptools": True,
-    "wheel": True,
-}
-
-debug_flag = False
-
-def calculate_folder_size(path):
-    total_size = 0
-    for dir_path, dir_name, file_name in os.walk(path):
-        for f in file_name:
-            fp = os.path.join(dir_path, f)
-            total_size = os.path.getsize(fp)
-
-    return total_size
-
-class Library_Details:
-    def __init__(self, name: str,
-        version: str,
-        space: str,
-        summary: str,
-        author: str,
-        license: str,
-        requires: list,
-        required_by: list):
-
-        self.name = name
-        self.version = version
-        self.space = space
-        self.summary = summary
-        self.author = author
-        self.license = license
-        self.requires = requires
-        self.required_by = required_by
-
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "version": self.version,
-            "space": self.space,
-            "summary": self.summary,
-            "author": self.author,
-            "license": self.license,
-            "requires": self.requires,
-            "required_by": self.required_by
-        }
-
 class Virtual_Env:
     def __init__(self, venv_name: str, venv_path: str, python_version: str, pip_path: str, python_path:str, libraries: list):
         self.venv_name = venv_name
@@ -78,9 +30,6 @@ class Virtual_Env:
         Libraries: {', '.join([library.name for library in self.libraries])}
         """
 
-    def __repr__(self) -> str:
-        return f"Venv Name: {self.venv_name}\nVenv Path: {self.venv_path}\nPython Version: {self.python_version}\nPip Path: {self.pip_path}\nPython Path: {self.python_path}\nLibraries: {', '.join([library.name for library in self.libraries])}"
-
 def find_virtual_envir(path: str) -> list[Virtual_Env]:
     # Find every virtual environment in the given path
     bin_dir_path: str
@@ -94,6 +43,7 @@ def find_virtual_envir(path: str) -> list[Virtual_Env]:
         pip_exec = ['pip.exe']
         activate_exec = ['activate.bat', 'Activate.ps1']
     else:
+
         bin_dir_path = 'bin'
         python_exec = ['python3', 'python']
         pip_exec = ['pip3', 'pip']
@@ -149,7 +99,6 @@ def find_virtual_envir(path: str) -> list[Virtual_Env]:
 
     return found_env
 
-
-
 if __name__ == "__main__":
     print(find_virtual_envir("./"))
+    print(2)

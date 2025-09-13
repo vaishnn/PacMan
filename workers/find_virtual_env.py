@@ -1,3 +1,4 @@
+import subprocess
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 from helpers.find_local_envs import find_virtual_envir
 
@@ -9,6 +10,10 @@ class FindEnvironment(QObject):
     def __init__(self):
         super().__init__()
         self.threadQ = QThread()
+        self.go_process = subprocess.Popen(
+            ['./'],
+
+        )
         self.worker = FindEnvironment_Worker()
         self.worker.moveToThread(self.threadQ)
         self.worker.finished.connect(self.emit_finished)

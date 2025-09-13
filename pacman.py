@@ -5,55 +5,14 @@ from PyQt6.QtWidgets import (
 )
 from dependency_tree.dependency_tree import DependencyTree
 from PyQt6.QtCore import Qt, pyqtSignal
-from installer.pypi import save_file
 from ui.control_bar import ControlBar
 from library.library import Library
 from installer.installer import Installer
 from onboarding.initial_screens import OnboardingPage
-from helpers.state import save_state
-
-
-
-class Analysis(QWidget):
-    """
-    Analysis page of the application
-    """
-    def __init__(self):
-        super().__init__()
-        self.setObjectName("analysis")
-        self.mainLayout = QVBoxLayout()
-        self.label = QLabel("This is the analysis Page")
-        self.mainLayout.addWidget(self.label)
-        self.setLayout(self.mainLayout)
-        pass
-
-
-
-class Setting(QWidget):
-    """
-    Setting page of the application
-    """
-    def __init__(self):
-        super().__init__()
-        self.setObjectName("setting")
-        self.mainLayout = QVBoxLayout()
-        label = QLabel("This is the setting Page")
-        self.mainLayout.addWidget(label)
-        self.setLayout(self.mainLayout)
-        pass
-
-class About(QWidget):
-    """
-    About page of the application
-    """
-    def __init__(self):
-        super().__init__()
-        self.setObjectName("about")
-        self.mainLayout = QVBoxLayout()
-        label = QLabel("This is the about Page")
-        self.mainLayout.addWidget(label)
-        self.setLayout(self.mainLayout)
-        pass
+from workers.saver import Save
+from about.about import About
+from analysis.analysis import Analysis
+from setting.setting import Setting
 
 
 
@@ -90,9 +49,13 @@ class PacMan(QMainWindow):
 
         self._setting_ui_properties()
         self.container = QFrame()
+        self._saving_screen()
         self.container.setObjectName("mainWindowContainer")
         self._setup_main_app_ui()
         self._onboarding_steps()
+        self.quit = Save()
+        self.quit.finished.connect(self.close)
+        self._saving = False
 
     def _extra_content(self):
         """
@@ -112,6 +75,7 @@ class PacMan(QMainWindow):
         self.main_stack = QStackedWidget(self)
         self.main_stack.addWidget(self.onboarding_widget)
         self.main_stack.addWidget(self.container)
+        self.main_stack.addWidget(self.saving_page)
 
         self.setCentralWidget(self.main_stack)
         if self.state_variables.get('project_folder', "") == "":
@@ -135,17 +99,6 @@ class PacMan(QMainWindow):
         """
         self.state_variables['project_folder'] = project_folder
         self.state_variables['virtual_env_name'] = virtual_env_name
-
-    def _save_current_state(self):
-        """
-        Saves the current state of the application.
-        """
-        # print(self.state_variables.get('project_folder'), self.state_variables.get('virtual_env_name'))
-        if not self.state_variables.get('project_folder', "") == "":
-            save_state(
-                self.state_variables.get('project_folder'), self.state_variables.get('virtual_env_name')
-            )
-
 
     def _set_existing_python_env(self, curr_dir, current_venv, virtual_envs):
         """
@@ -279,6 +232,23 @@ class PacMan(QMainWindow):
 
         return sideBar, navList
 
+    def _saving_screen(self):
+        self.saving_page = QWidget()
+        self.saving_page.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.saving_page.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.saving_page.setFixedSize(400, 200)
+        self.saving_page.setContentsMargins(20, 20, 20, 20)
+        layout = QVBoxLayout(self.saving_page)
+        layout.setSpacing(10)
+        layout.setContentsMargins(0, 0, 0, 0)
+        label = QLabel("Saving...")
+        label.setStyleSheet("color: #fff; font-size: 48px;")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+        self.saving_page.setLayout(layout)
+
+
+
     def createContentArea(self):
         """
         Create stack area for all the different pages (eg. libraries, installer ...)
@@ -304,8 +274,12 @@ class PacMan(QMainWindow):
         Args:
             a0 (QCloseEvent): The close event.
         """
-        save_file(self.installer.allLibraries)
-        self._save_current_state()
+        self.main_stack.setCurrentIndex(3)
+        if self._saving:
+            super().closeEvent(a0)
         if "Installer" in self.contentDict:
             self.contentDict["Installer"].getDetails.stopThread()
-        super().closeEvent(a0)
+        self._saving = True
+        self.main_stack.setCurrentIndex(3)
+        self.quit.run(self.installer.allLibraries, self.state_variables)
+        # self.setEnabled(False)

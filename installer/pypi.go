@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -8,9 +9,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -51,6 +54,22 @@ func get_license(classifiers []string) string {
 		}
 	}
 	return "UNKNOWN"
+}
+
+func save_data(file_dir string) {
+	buffer := new(bytes.Buffer)
+	buffer_encoder := json.NewEncoder(buffer)
+	buffer_encoder.SetEscapeHTML(false)
+	buffer_encoder.SetIndent("", " ")
+	dbMutex.Lock()
+	if err := buffer_encoder.Encode(package_database); err != nil {
+		slog.Error("Failed to encode package database", "error", err)
+	}
+	dbMutex.Unlock()
+
+	if err := os.WriteFile(file_dir, buffer.Bytes(), 0644); err != nil {
+		slog.Error(fmt.Sprintf("Failed to write package database: %v", err))
+	}
 }
 
 func get_library_info(package_name string, wg *sync.WaitGroup) {
@@ -115,10 +134,9 @@ func create_find_app_support_dir(app_name string) (string, error) {
 
 func main() {
 
-	handler := slog.NewJSONHandler(os.Stdout, nil)
+	handler := slog.NewJSONHandler(os.Stderr, nil)
 	logger := slog.New(handler).With("service", "go-detail-api")
 	slog.SetDefault(logger)
-	slog.Info("fetching library detail")
 	app_name := "PacMan"
 	file_name := "library_details.json"
 
@@ -147,29 +165,38 @@ func main() {
 	}
 	dbMutex.Unlock()
 
-	packages_json := os.Args[1:]
-	if len(packages_json) == 0 {
-		slog.Error("No library passed")
-	}
-	var wg sync.WaitGroup
-	for _, pkg := range packages_json {
-		wg.Add(1)
-		go get_library_info(pkg, &wg)
-	}
-	wg.Wait()
+	signal_for_closing := make(chan os.Signal, 1)
+	signal.Notify(signal_for_closing, syscall.SIGINT, syscall.SIGTERM)
 
-	buffer := new(bytes.Buffer)
-	encoder := json.NewEncoder(buffer)
-	encoder.SetEscapeHTML(false)
-	encoder.SetIndent("", " ")
+	go func() {
+		sig := <-signal_for_closing
+		slog.Info("Got the Signal for closing", "signal", sig)
+		save_data(file_dir)
+		os.Exit(0)
+	}()
 
-	dbMutex.Lock()
-	if err := encoder.Encode(package_database); err != nil {
-		slog.Error("Failed to encode package database", "error", err)
-	}
-	dbMutex.Unlock()
+	scanner := bufio.NewScanner(os.Stdin)
+	encoder := json.NewEncoder(os.Stdout)
+	for scanner.Scan() {
+		packages := strings.Fields(scanner.Text())
+		var wg sync.WaitGroup
+		for _, pkg := range packages {
+			if pkg == "" {
+				continue
+			}
 
-	if err := os.WriteFile(file_dir, buffer.Bytes(), 0644); err != nil {
-		slog.Error(fmt.Sprintf("Failed to write package database: %v", err))
+			if _, ok := package_database[pkg]; ok {
+				continue
+			}
+			wg.Add(1)
+			go get_library_info(pkg, &wg)
+		}
+		wg.Wait()
+
+		current_packages := make(map[string]PyPIInfo)
+		for _, pkg := range packages {
+			current_packages[pkg] = package_database[pkg]
+		}
+		encoder.Encode(current_packages)
 	}
 }

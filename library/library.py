@@ -1,15 +1,16 @@
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
-from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
+from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, QThread, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
 
 from library.tool_tip_library import GetLibraryDetails
-from library.delete_library import UninstallManager
-from library.load_library import FetchLibraryList
+from workers.delete_library import UninstallManager
+from workers.fetch_list_libraries import FetchLibraryList
 
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
 
-
+class Worker(QThread):
+    pass
 
 class Library(QWidget):
     """
