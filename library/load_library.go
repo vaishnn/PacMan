@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
@@ -222,25 +221,37 @@ func main() {
 	logger := slog.New(handler).With("service", "go-detail-api")
 	slog.SetDefault(logger)
 
-	scanner := bufio.NewScanner(os.Stdin)
+	// scanner := bufio.NewScanner(os.Stdin)
 	var buffer bytes.Buffer
 	multi_encoder := io.MultiWriter(os.Stdout, &buffer)
 	encoder := json.NewEncoder(multi_encoder)
 	encoder.SetEscapeHTML(false)
 
-	for scanner.Scan() {
-		virtual_env_path := strings.TrimSpace(scanner.Text())
-		site_packages_path, err := get_installed_libraries_with_size(virtual_env_path)
-		if err != nil {
-			slog.Error("Error getting installed libraries", "error", err)
-			return
-		}
-		if err := encoder.Encode(site_packages_path); err != nil {
-			slog.Error("Failed to write JSON output", "error", err)
-		}
-		if err := scanner.Err(); err != nil {
-			slog.Error("Error reading from stdin", "error", err)
-		}
-		slog.Info("Stdin closed. Exiting.")
+	virtual_env_dir := os.Args[1:][0]
+
+	virtual_env_path := strings.TrimSpace(virtual_env_dir)
+	site_packages_path, err := get_installed_libraries_with_size(virtual_env_path)
+	if err != nil {
+		slog.Error("Error getting installed libraries", "error", err)
+		return
 	}
+	if err := encoder.Encode(site_packages_path); err != nil {
+		slog.Error("Failed to write JSON output", "error", err)
+	}
+
+	// for scanner.Scan() {
+	// 	virtual_env_path := strings.TrimSpace(scanner.Text())
+	// 	site_packages_path, err := get_installed_libraries_with_size(virtual_env_path)
+	// 	if err != nil {
+	// 		slog.Error("Error getting installed libraries", "error", err)
+	// 		return
+	// 	}
+	// 	if err := encoder.Encode(site_packages_path); err != nil {
+	// 		slog.Error("Failed to write JSON output", "error", err)
+	// 	}
+	// 	if err := scanner.Err(); err != nil {
+	// 		slog.Error("Error reading from stdin", "error", err)
+	// 	}
+	// 	slog.Info("Stdin closed. Exiting.")
+	// }
 }

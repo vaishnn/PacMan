@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -62,7 +62,7 @@ func dispatchJobs(jobs chan<- string, root_path string, max_depth int) {
 
 		entries, err := os.ReadDir(current_path)
 		if err != nil {
-			fmt.Printf("Error reading directory %s: %v\n", current_path, err)
+			slog.Error("Error reading directory", "path", current_path, "error", err)
 			return
 		}
 
@@ -146,6 +146,8 @@ func checkExecutable(path string) bool {
 }
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	slog.SetDefault(logger)
 	max_depth := 2
 	number_worker := 4
 
