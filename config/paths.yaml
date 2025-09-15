@@ -6,6 +6,9 @@ paths:
     images:
       appLogo: "assets/icons/appLogo.png"
       uninstall: "assets/icons/uninstall.png"
+      uninstalling: "assets/icons/uninstalling.png"
+      uninstalled: "assets/icons/uninstalled.png"
+      failed: "assets/icons/failed.png"
       install: "assets/icons/install.png"
       installing: "assets/icons/installing.png"
       installed: "assets/icons/installed.png"
