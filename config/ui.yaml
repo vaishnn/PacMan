@@ -233,7 +233,10 @@ stylesheet:
       padding-top: 3px;
     }
     QComboBox::down-arrow {
-      image: ./assets/icons/fold.png;
+      image: url( {{  paths.assets.images.arrowDown }});
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
     }
 
   initScreen: |

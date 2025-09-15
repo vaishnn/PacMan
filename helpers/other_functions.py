@@ -1,8 +1,6 @@
 import re
-from PyQt6.QtCore import QRectF, QSize, Qt
-from PyQt6.QtGui import QColor, QFont, QFontDatabase, QIcon, QPainter, QPixmap
+from PyQt6.QtGui import QFont, QFontDatabase
 import os
-from PyQt6.QtSvg import QSvgRenderer
 import yaml
 from pathlib import Path
 import subprocess
@@ -24,9 +22,10 @@ def where_python_location(searching_paths: list[str] = [
             continue
 
         # Case for framework Path
-        if "Framework" in folder:
-            for files in Path(folder).iterdir():
-                bin_dir = files / "bin" # / is an operator in Path class
+
+        for files in Path(folder).iterdir():
+            if "Framework" in folder:
+                bin_dir = files / "bin"
                 if bin_dir.exists():
                     for file in bin_dir.iterdir():
                         if python_executable_pattern.match(file.name) and os.access(file, os.X_OK):
@@ -34,35 +33,23 @@ def where_python_location(searching_paths: list[str] = [
                             try:
                                 abs_path = just_path.resolve()
 
-                                if abs_path in found_interpreters:
+                                if abs_path  not in found_interpreters:
                                     version = subprocess.check_output([str(abs_path), "--version"], stderr = subprocess.STDOUT)
                                     found_interpreters[str(abs_path)] = version.decode().strip()
+                                    break
                             except Exception:
                                 continue # This is for python named but doesn't have version and any other errors
-        else:
-            # For all the others paths
-            for item in Path(folder).iterdir():
-                if python_executable_pattern.match(item.name) and os.access(item, os.X_OK):
-                    just_path = item
+            else:
+                if python_executable_pattern.match(files.name) and os.access(files, os.X_OK):
+                    just_path = files
                     try:
                         abs_path = just_path.resolve()
                         if str(abs_path) not in found_interpreters:
                             version = subprocess.check_output([str(abs_path), "--version"], stderr = subprocess.STDOUT)
-                            found_interpreters[version.decode().strip()] = str(abs_path)
+                            found_interpreters[str(abs_path)] = version.decode().strip()
                     except Exception:
                         continue
     return found_interpreters
-
-
-def svg_to_icon(svg_path: str, fill_color: QColor = QColor(Qt.GlobalColor.transparent), size = QSize(64, 64)):
-    renderer = QSvgRenderer(svg_path)
-    pixmap = QPixmap(size)
-    pixmap.fill(fill_color)
-
-    painter = QPainter(pixmap)
-    renderer.render(painter, QRectF(0, 0, size.width(), size.height()))
-    painter.end()
-    return QIcon(pixmap)
 
 
 
@@ -134,10 +121,6 @@ def seperate_yaml(ui, stylesheet: dict):
 
     return _processed_stylesheets
 
-# Currently will not be saving as QSS but still defining for future implementation
-def write_stylesheet(processed_dict: dict, output_dir: str):
-    pass
-
 def load_config(ui_file_path="config/ui.yaml",
     controls_file_path="config/paths.yaml",
     paths_file_path="config/application.yaml",
@@ -152,3 +135,6 @@ def load_config(ui_file_path="config/ui.yaml",
     config['stylesheet'] = seperate_yaml(config, config.get('stylesheet', ''))
 
     return config
+
+if __name__ == "__main__":
+    print(where_python_location())

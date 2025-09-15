@@ -418,7 +418,6 @@ class Installer(QWidget):
         idx = self.sortedMatches.index(name_of_library)
         self.sortedMatches_with_install[idx].update({'status': 'installing'})
         self.sourceModel.dataChanged.emit(model_index, model_index)
-        print(self.python_exec)
         self.installerThread = InstallerLibraries(self.python_exec, name_of_library, model_index)
         self.installerThread.finished.connect(self._show_installed_flag)
         self.installerThread.finished.connect(self.installerThread.deleteLater)

@@ -5,6 +5,7 @@ from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
 from PyQt6.QtCore import QEasingCurve, QObject, QPropertyAnimation, QThread, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
+from copy import deepcopy
 
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
 
@@ -55,7 +56,6 @@ class LibraryWorker(QObject):
             return
         try:
             venvs = json.loads(result_venvs.stdout)
-            print(result_venvs.stdout)
             self.virtual_envs.emit(venvs)
             return
         except json.JSONDecodeError:
@@ -170,7 +170,6 @@ class Library(QWidget):
             self.config = config
         self.setObjectName("library")
         self._init_properties()
-        self._init_managers()
         self._worker_thread()
         self._init_ui()
         self._connect_signals()
@@ -186,17 +185,6 @@ class Library(QWidget):
         self.already_inside_project = False
         self.current_dir = ""
         self.uninstallManager = None
-
-    def _init_managers(self):
-        """Initializes helper classes for fetching details and uninstalling."""
-        # Tooltip Fetching Manager
-        # self.fetch_list_of_libraries = FetchLibraryList()
-        # self.getLibraryDetails = GetLibraryDetails()
-
-        # Uninstall Manager
-        # uninstall_timeout = int(self.config.get("controls", {}).get("library", {}).get("uninstallManagerTimout", 10000))
-        # self.uninstallManager = UninstallManager(IDLE_TIMOUT=uninstall_timeout)
-        pass
 
     def _worker_thread(self):
         self.worker = LibraryThreads()
@@ -326,14 +314,23 @@ class Library(QWidget):
 
     def on_venvs_loaded(self, directory_path, current_venv, virtual_env_names):
         # Block signals to prevent the signal loop
+
+
         self.change_env_in_same_directory.clear()
         self.change_env_in_same_directory.blockSignals(True)
         self.current_dir = directory_path
 
         self.setPythonExecPath([env['python_path'] for env in virtual_env_names if env['venv_name'] == current_venv][0])
         if virtual_env_names:
-            for env in virtual_env_names:
-                self.change_env_in_same_directory.addItem(env['venv_name'])
+
+
+            for env in deepcopy(virtual_env_names):
+                if os.path.exists(env["venv_path"]):
+                    self.change_env_in_same_directory.addItem(env['venv_name'])
+                else:
+                    virtual_env_names.remove(env)
+                    if current_venv == env['venv_name']:
+                        current_venv = self.change_env_in_same_directory.currentText()
 
 
             self.current_loaded_virtual_envs_list = virtual_env_names
@@ -408,7 +405,6 @@ class Library(QWidget):
         # Clear the UI and re-populate it with the sorted list
         self.libraryList.clear()
         self.itemMap.clear()
-        print([item['name'] for item in items])
         for item in items:
             listLibraryWidget = QWidget()
             listLibraryWidget.setObjectName("listLibraryWidget")

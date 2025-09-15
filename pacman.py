@@ -132,7 +132,6 @@ class ControlBar(QWidget):
         self.toggle_maximize()
         return super().mouseDoubleClickEvent(a0)
 
-
 class OnboardingPage(QWidget):
 
     """
@@ -322,7 +321,6 @@ class OnboardingPage(QWidget):
 
             self.stacked_widget.setCurrentIndex(1)
         if code == 1:
-            print(20)
             self.location_selected.emit(venv_path, venv_name, all_venv_names)
         pass
 
@@ -369,7 +367,6 @@ class OnboardingPage(QWidget):
             # found_env = "\n".join([f"{item['path']} : {item['version']}" for item in env])
             self.found_virtual_envs_label.setText(f"found {len(env)} virtual environments")
             for item in env:
-                print(item)
                 self.list_of_virtual_env.append(item.get('venv_path'))
 
                 self.drop_down_for_selecting_virtual_env.addItem(
@@ -392,7 +389,6 @@ class OnboardingPage(QWidget):
 
     def _finished_flow(self):
         self.switch_to_main.emit()
-
 
 class PacMan(QMainWindow):
     """
