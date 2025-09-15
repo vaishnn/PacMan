@@ -100,3 +100,8 @@ coverage.xml
 dist/*
 build/*
 setup.py
+
+# Compiled files
+findLocalEnv
+load_library
+inspect.json
