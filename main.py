@@ -1,3 +1,5 @@
+import json
+import os
 import sys
 from PyQt6.QtGui import  QIcon, QPixmap
 from PyQt6.QtWidgets import (
@@ -6,8 +8,20 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from helpers.other_functions import loadFont
 from helpers.yaml_pre_processing import load_config
-from helpers.state import load_state
 from pacman import PacMan
+from installer.pypi import get_app_support_directory
+
+
+def load_state(file_name = "state.json"):
+    directory = get_app_support_directory()
+    file_path = os.path.join(directory, file_name)
+    data = {}
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        pass
+    return data
 
 
 

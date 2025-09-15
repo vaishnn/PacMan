@@ -1,3 +1,5 @@
+import json
+import os
 from PyQt6.QtWidgets import (
     QFrame, QListWidget,
     QMainWindow, QHBoxLayout, QVBoxLayout,
@@ -5,15 +7,26 @@ from PyQt6.QtWidgets import (
 )
 from dependency_tree.dependency_tree import DependencyTree
 from PyQt6.QtCore import Qt, pyqtSignal
+from installer.pypi import save_file
 from ui.control_bar import ControlBar
 from library.library import Library
-from installer.installer import Installer
-from onboarding.initial_screens import OnboardingPage
+from onboarding import OnboardingPage
 from workers.saver import Save
 from about.about import About
+from installer.installer import Installer
 from analysis.analysis import Analysis
 from setting.setting import Setting
 
+from installer.pypi import get_app_support_directory
+
+def save_state(data, file_name = "state.json"):
+    directory = get_app_support_directory()
+    file_path = os.path.join(directory, file_name)
+    try:
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+    except FileNotFoundError:
+        pass
 
 
 class PacMan(QMainWindow):
@@ -85,11 +98,11 @@ class PacMan(QMainWindow):
             self._set_existing_python_env(
                 self.state_variables.get('project_folder', ''),
                 self.state_variables.get('virtual_env_name', ''),
-                ''
+                self.state_variables.get('loaded_virtual_envs', [])
             )
 
 
-    def _set_state_variables(self, project_folder, virtual_env_name):
+    def _set_state_variables(self, project_folder, virtual_env_name, virtual_env_list):
         """
         Sets the state variables for the application.
 
@@ -99,6 +112,7 @@ class PacMan(QMainWindow):
         """
         self.state_variables['project_folder'] = project_folder
         self.state_variables['virtual_env_name'] = virtual_env_name
+        self.state_variables['loaded_virtual_envs'] = virtual_env_list
 
     def _set_existing_python_env(self, curr_dir, current_venv, virtual_envs):
         """
@@ -132,11 +146,13 @@ class PacMan(QMainWindow):
             "About": self.about
         }
         self.navLists = ["Libraries", "Installer", "Analysis", "Dependency Tree", "Settings", "About"]
+        # self.navLists = ["Libraries", "Analysis", "Dependency Tree", "Settings", "About"]
 
         self.libraries.current_state.connect(self._set_state_variables)
         self.libraries.libraries_emitter.connect(self._retrieve_libraries_content)
         self.libraries.python_exec.connect(self.installer.set_python_exec)
         self.installer.populationFinished.connect(self._set_status_installer)
+        self.installer.installed.connect(self.libraries.refetch_libraries)
 
         mainLayout = QHBoxLayout(self.container)
         mainLayout.setContentsMargins(
@@ -167,7 +183,7 @@ class PacMan(QMainWindow):
         Args:
             libraries (list): A list of libraries.
         """
-        self.current_libraries = [library['name'] for library in libraries]
+        self.current_libraries = [library['metadata']['name'] for library in libraries]
         if self._installer_populated:
             self._set_status_installer()
 
@@ -191,7 +207,6 @@ class PacMan(QMainWindow):
     def sideBar(self):
         """
         Creates the side bar of the application.
-
         Returns:
             tuple: A tuple containing the side bar and the navigation items.
         """
@@ -275,11 +290,13 @@ class PacMan(QMainWindow):
             a0 (QCloseEvent): The close event.
         """
         self.main_stack.setCurrentIndex(3)
-        if self._saving:
-            super().closeEvent(a0)
-        if "Installer" in self.contentDict:
-            self.contentDict["Installer"].getDetails.stopThread()
-        self._saving = True
-        self.main_stack.setCurrentIndex(3)
-        self.quit.run(self.installer.allLibraries, self.state_variables)
-        # self.setEnabled(False)
+        if not self.state_variables.get('project_folder', "") == "":
+            save_state(
+                self.state_variables
+            )
+            save_file(self.installer.allLibraries)
+
+
+        # if "Installer" in self.contentDict:
+        #     self.contentDict["Installer"].getDetails.stopThread()
+        super().closeEvent(a0)

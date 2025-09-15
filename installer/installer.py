@@ -1,12 +1,44 @@
+import subprocess
 from PyQt6 import QtCore
-from PyQt6.QtCore import QAbstractListModel, QEvent, QModelIndex, QPoint, QRect, QSize, QTimer, QVariant, Qt, pyqtSignal
+from PyQt6.QtCore import QAbstractListModel, QEvent, QModelIndex, QPoint, QRect, QSize, QThread, QTimer, QVariant, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import QLineEdit, QListView,  QSizePolicy, QStyle,  QStyledItemDelegate, QVBoxLayout, QWidget
-from installer.install_library import LibraryInstaller
 from installer.pypi import PyPiRunner
 from installer.request_pypi import RequestDetails
 
 DataRole = Qt.ItemDataRole.UserRole + 1
+
+class InstallerLibraries(QThread):
+    finished = pyqtSignal(int, QModelIndex)
+    def __init__(self ,python_exec_path, library_name, model_index: QModelIndex) -> None:
+        super().__init__()
+        self.python_exec_path = python_exec_path
+        self.library_name = library_name
+        self.model_index = model_index
+
+    def run(self):
+        try:
+            # subprocess.run is a blocking call, which is now safely in the background
+            result = subprocess.run(
+                [self.python_exec_path, "-m", "pip", "install", self.library_name],
+                capture_output=True,
+                text=True,
+                check=False # Don't raise an exception on non-zero exit codes
+            )
+
+            print("---STDOUT---")
+            print(result.stdout)
+            print("---STDERR---")
+            print(result.stderr)
+
+            if result.returncode == 0:
+                self.finished.emit(1, self.model_index)
+            else:
+                self.finished.emit(-1, self.model_index)
+
+        except Exception as e:
+            print(f"An exception occurred: {e}")
+            self.finished.emit(-1, self.model_index) # Use -1 for exceptions
 
 class PyPIitemDelegate(QStyledItemDelegate):
     installClicked = pyqtSignal(QModelIndex)
@@ -106,23 +138,31 @@ class PyPIitemDelegate(QStyledItemDelegate):
         painter.restore()
 
         status_install = itemData.get("status", "install")
-
-        install_icon = self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
-        installing_icon = self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installing", "")
-        installed_icon = self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installed", "")
-
         mouse_pos = option.widget.mapFromGlobal(
             option.widget.cursor().pos()) if option.widget else QPoint(-1, -1)
         is_hovering_install = install_rect.contains(mouse_pos)
 
         if status_install == "install" :
             if is_hovering_install :
-                self._drawColoredPixmap(painter, install_rect, QPixmap(install_icon), self.button_color, "#929292")
-            self._drawColoredPixmap(painter, install_rect, QPixmap(install_icon), self.button_color)
+                self._drawColoredPixmap(painter, install_rect, QPixmap(
+                    self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
+                ), self.button_color, "#929292")
+            else:
+                self._drawColoredPixmap(painter, install_rect, QPixmap(
+                    self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
+                ), self.button_color)
         elif status_install == "installed":
-            self._drawColoredPixmap(painter, install_rect, QPixmap(installed_icon), self.button_color)
+            self._drawColoredPixmap(painter, install_rect, QPixmap(
+                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installed", "")
+            ), self.button_color)
         elif status_install == "installing":
-            self._drawColoredPixmap(painter, install_rect, QPixmap(installing_icon), self.button_color)
+            self._drawColoredPixmap(painter, install_rect, QPixmap(
+                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installing", "")
+            ), self.button_color)
+        elif status_install == "failed":
+            self._drawColoredPixmap(painter, install_rect, QPixmap(
+                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("failed", "")
+            ), self.button_color)
 
 
     def updateEditorGeometry(self, editor, option, index) -> None:
@@ -261,6 +301,7 @@ class Installer(QWidget):
     def __init__(self, parent=None, config: dict = {}):
         super().__init__(parent)
         self.config = config
+        self.installerThread = None
         self.indexes_which_are_installed = []
         self.sortedMatches = []
         self.sortedMatches_with_install = []
@@ -340,8 +381,6 @@ class Installer(QWidget):
         self.fetch_details_timer.setSingleShot(True)
         self.fetch_details_timer.timeout.connect(self.fetchDetails)
 
-        self.installer = LibraryInstaller()
-        self.installer.finished_signal.connect(self._show_installed_flag)
 
     def set_status(self, libraries_list: list):
         for library in libraries_list:
@@ -363,7 +402,9 @@ class Installer(QWidget):
                 self.getDetails.fetch_details(API_ENDPOINT=self.API_ENDPOINT, library=library)
 
     def _show_installed_flag(self, return_code, model_index: QModelIndex):
+        self.installerThread = None
         name_of_library = model_index.data(DataRole).get('name')
+        self.installed.emit()
         idx = self.sortedMatches.index(name_of_library)
         if return_code == -1:
             self.sortedMatches_with_install[idx].update({'status': 'failed'})
@@ -377,7 +418,11 @@ class Installer(QWidget):
         idx = self.sortedMatches.index(name_of_library)
         self.sortedMatches_with_install[idx].update({'status': 'installing'})
         self.sourceModel.dataChanged.emit(model_index, model_index)
-        self.installer.install(self.python_exec, name_of_library, model_index)
+        print(self.python_exec)
+        self.installerThread = InstallerLibraries(self.python_exec, name_of_library, model_index)
+        self.installerThread.finished.connect(self._show_installed_flag)
+        self.installerThread.finished.connect(self.installerThread.deleteLater)
+        self.installerThread.start()
 
     def _setup_signals_for_fetching_libraries(self):
         # Threading setup, fetching details of libraries will be in different function

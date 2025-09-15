@@ -1,16 +1,151 @@
+import json
+import os
+import subprocess
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QComboBox, QFileDialog, QLineEdit, QMessageBox, QWidget, QVBoxLayout, QListWidget, QHBoxLayout, QLabel, QListWidgetItem, QPushButton
-from PyQt6.QtCore import QEasingCurve, QPropertyAnimation, QThread, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
+from PyQt6.QtCore import QEasingCurve, QObject, QPropertyAnimation, QThread, QTimer, Qt, pyqtSignal, pyqtSlot, QSize
 from PyQt6.QtWidgets import QSizePolicy
-
-from library.tool_tip_library import GetLibraryDetails
-from workers.delete_library import UninstallManager
-from workers.fetch_list_libraries import FetchLibraryList
 
 # Implementation to be DONE of Better Layout and After Changing virtual Path it doesn't shows the Library Details
 
-class Worker(QThread):
-    pass
+class LibraryWorker(QObject):
+    details_with_virtual_envs = pyqtSignal(str, list, list)
+    new_virtual_env = pyqtSignal(int, str, str, list)
+    virtual_envs = pyqtSignal(list)
+    details = pyqtSignal(list)
+
+    @pyqtSlot(str, str, str)
+    def fetch_only_details(self, directory, load_library_exe, venv_name):
+        """only fetches details of the library by running the compiled Go Code"""
+        if directory == "" or venv_name == "":
+            self.details.emit([])
+            return
+
+        result_details = subprocess.run(
+            [load_library_exe, os.path.join(directory, venv_name)],
+            capture_output=True,
+            text=True,
+        )
+        if result_details.stdout.strip() == "":
+            self.details.emit([])
+            return
+
+        try:
+            details = json.loads(result_details.stdout).get('installed')
+            self.details.emit(details)
+        except json.JSONDecodeError:
+            self.details.emit([])
+            return
+
+    @pyqtSlot(str, str)
+    def fetch_virtual_envs(self, directory, find_env_exe):
+        """fetches virtual environments by running the compiled Go Code"""
+        if not directory or not find_env_exe:
+            self.virtual_envs.emit([])
+            return
+
+        result_venvs = subprocess.run(
+            [find_env_exe, directory],
+            capture_output=True,
+            text=True,
+        )
+        venvs = json.loads(result_venvs.stdout)
+        if not venvs:
+            self.virtual_envs.emit([])
+            return
+        try:
+            venvs = json.loads(result_venvs.stdout)
+            print(result_venvs.stdout)
+            self.virtual_envs.emit(venvs)
+            return
+        except json.JSONDecodeError:
+            self.virtual_envs.emit([])
+            return
+
+    @pyqtSlot(str, str, str, str)
+    def initialize_new_virtual_env(self, directory, python_path, virtual_env_name, find_env_exe):
+        if not (directory or python_path or virtual_env_name, find_env_exe):
+            self.new_virtual_env.emit(1, "", "", "")
+        self.new_virtual_env.emit(0, "", "", [])
+        is_pip_preset = subprocess.run([python_path, "-m", "pip", "--version"],
+            capture_output=True,
+            text=True,
+        )
+        if is_pip_preset.returncode == 1:
+            # requires python>=3.4
+            subprocess.run([python_path, "-m", "ensurepip", "--upgrade"])
+        subprocess.run([python_path, "-m", "venv", virtual_env_name], capture_output=True, text=True, check=False, cwd=directory)
+        result_venvs = subprocess.run(
+            [find_env_exe, directory],
+            capture_output=True,
+            text=True
+        )
+        try:
+            venvs = json.loads(result_venvs.stdout)
+        except json.JSONDecodeError:
+            venvs = []
+        self.new_virtual_env.emit(1, directory, virtual_env_name, venvs)
+
+class Uninstall(QThread):
+    finished = pyqtSignal(int, str, str, QPushButton) # (success_code, library_name, python_path, button)
+
+    def __init__(self, python_path, library, uninstall_button):
+        super().__init__()
+        self.python_path = python_path
+        self.library = library
+        self.uninstall_button = uninstall_button
+
+    def run(self):
+        result = subprocess.run(
+            [self.python_path, "-m", "pip", "uninstall", "-y", self.library],
+            text=True,
+        )
+
+        if result.returncode == 0:
+            self.finished.emit(1, self.library, self.python_path, self.uninstall_button)
+        else:
+            self.finished.emit(-1, self.library, self.python_path, self.uninstall_button)
+
+class LibraryThreads(QObject):
+    new_virtual_env = pyqtSignal(int, str, str, list)
+    details_with_virtual_envs = pyqtSignal(str, list, list)
+    virtual_envs = pyqtSignal(list)
+    details = pyqtSignal(list)
+    get_details = pyqtSignal(str, str, str)
+    get_virtual_envs = pyqtSignal(str, str)
+    get_details_with_virtual_envs = pyqtSignal(str, str, str)
+    create_virtual_env = pyqtSignal(str, str, str, str)
+
+    def __init__(self, parent = None):
+        super().__init__(parent)
+        self.thread_library = QThread()
+        self.worker = LibraryWorker()
+        self.worker.moveToThread(self.thread_library)
+        self.worker.details_with_virtual_envs.connect(self.details_with_virtual_envs.emit)
+        self.worker.virtual_envs.connect(self.virtual_envs.emit)
+        self.worker.details.connect(self.details.emit)
+        self.worker.new_virtual_env.connect(self.new_virtual_env.emit)
+        self.thread_library.start()
+        self.get_details.connect(self.worker.fetch_only_details)
+        self.get_virtual_envs.connect(self.worker.fetch_virtual_envs)
+        self.create_virtual_env.connect(self.worker.initialize_new_virtual_env)
+
+    def emit_signal_for_details(self, directory, load_library_exe, venv_name):
+        self.get_details.emit(directory, load_library_exe, venv_name)
+
+    def emit_signal_for_virtual_envs(self, directory, load_library_exe):
+        self.get_virtual_envs.emit(directory, load_library_exe)
+
+    def emit_signal_for_details_with_virtual_envs(self, directory, load_library_exe, venv_name):
+        self.get_details_with_virtual_envs.emit(directory, load_library_exe, venv_name)
+
+    def emit_create_virtual_env(self, directory, python_path, venv_name, find_env_exe):
+        self.create_virtual_env.emit(directory, python_path, venv_name, find_env_exe)
+
+    def quit(self):
+        if self.thread_library.isRunning():
+            self.thread_library.quit()
+            self.thread_library.wait()
 
 class Library(QWidget):
     """
@@ -23,10 +158,11 @@ class Library(QWidget):
     - Allow user to uninstall selected library
     - And more if we want
     """
+    venv_loaded = pyqtSignal(str, str, list)
     listLibraryRefreshed = pyqtSignal()
     show_env_box = pyqtSignal()
     libraries_emitter = pyqtSignal(list)
-    current_state = pyqtSignal(str, str) # Current state of selected Project Folder and Virtual Env name selected
+    current_state = pyqtSignal(str, str, list) # Current state of selected Project Folder and Virtual Env name selected
     python_exec = pyqtSignal(str)
     def __init__(self, config, parent=None):
         super().__init__(parent)
@@ -35,6 +171,7 @@ class Library(QWidget):
         self.setObjectName("library")
         self._init_properties()
         self._init_managers()
+        self._worker_thread()
         self._init_ui()
         self._connect_signals()
 
@@ -43,19 +180,27 @@ class Library(QWidget):
         self.toolTipCache = {}
         self.itemMap = {}
         self.animate_env_box = False
+        self.current_loaded_virtual_envs_list = []
+        self.current_virtual_env = ""
         self.pythonExecPath = ""
         self.already_inside_project = False
+        self.current_dir = ""
+        self.uninstallManager = None
 
     def _init_managers(self):
         """Initializes helper classes for fetching details and uninstalling."""
         # Tooltip Fetching Manager
-        self.fetch_list_of_libraries = FetchLibraryList()
-        self.getLibraryDetails = GetLibraryDetails()
+        # self.fetch_list_of_libraries = FetchLibraryList()
+        # self.getLibraryDetails = GetLibraryDetails()
 
         # Uninstall Manager
-        uninstall_timeout = int(self.config.get("controls", {}).get("library", {}).get("uninstallManagerTimout", 10000))
-        self.uninstallManager = UninstallManager(IDLE_TIMOUT=uninstall_timeout)
+        # uninstall_timeout = int(self.config.get("controls", {}).get("library", {}).get("uninstallManagerTimout", 10000))
+        # self.uninstallManager = UninstallManager(IDLE_TIMOUT=uninstall_timeout)
+        pass
 
+    def _worker_thread(self):
+        self.worker = LibraryThreads()
+        self.worker.details.connect(self.handleListLibraries)
 
     def _init_ui(self):
         """Initializes the main user interface layout and components."""
@@ -95,12 +240,17 @@ class Library(QWidget):
         self.change_env_in_same_directory.setFixedHeight(30)
         self.change_env_in_same_directory.setFixedWidth(0)
         self.change_env_in_same_directory.setVisible(False)
-        self.change_env_in_same_directory.currentIndexChanged.connect(self._change_virtual_env)
+        self.change_env_in_same_directory.currentIndexChanged.connect(self._on_env_inventory_in_same_directory)
 
 
         button_layout.addWidget(self.labelLocation, 1)
         button_layout.addWidget(self.change_env_in_same_directory, 2)
         parent_layout.addLayout(button_layout)
+
+    def _on_env_inventory_in_same_directory(self):
+        current_location = self.labelLocation.text()
+        current_virtual_env = self.change_env_in_same_directory.currentText().split(":")[0].strip()
+        self._change_virtual_env(current_location, current_virtual_env)
 
     def _expand_change_env(self):
         """Animtes the virtual env selector"""
@@ -123,11 +273,13 @@ class Library(QWidget):
         )
         self.animation.start()
 
-    def _change_virtual_env(self):
-        current_location = self.labelLocation.text()
-        current_virtual_env = self.change_env_in_same_directory.currentText().split(":")[0].strip()
-        self.current_state.emit(current_location, current_virtual_env)
-        self.selectLocationFromMain(current_location, current_virtual_env, "")
+    def _change_virtual_env(self, directory, venv_name):
+
+        if not directory or not venv_name:
+            return
+        self.current_state.emit(directory, venv_name, self.current_loaded_virtual_envs_list)
+        self.current_virtual_env = venv_name
+        self.worker.emit_signal_for_details(directory, './load_library', venv_name)
 
     def _setup_search_bar(self, parent_layout):
         """Creates the search bar and its associated typing timer."""
@@ -159,12 +311,8 @@ class Library(QWidget):
 
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
-        self.fetch_list_of_libraries.libraries.connect(self.handleListLibraries)
-        self.uninstallManager.uninstallFinished.connect(self.onUninstallFinished)
-        self.getLibraryDetails.detailsWithName.connect(self.getLibraryDetailsThroughClass)
         self.show_env_box.connect(self._expand_change_env)
-        self.listLibraryRefreshed.connect(self.getLibraryDetails.startThread)
-        self.listLibraryRefreshed.connect(self.startAllTooltipFetches)
+        self.venv_loaded.connect(self.on_venvs_loaded)
 
     def whenTimerForToolTipIsFinished(self):
         self.listLibraryRefreshed.emit()
@@ -173,19 +321,33 @@ class Library(QWidget):
         self.pythonExecPath = path
         self.python_exec.emit(path)
 
-    def handleListLibraries(self, pythonPath: str, libraries: list, virtual_env_names: list):
-        # self.contentDict['Libraries'].libraryList.clear()
-        self.libraries_emitter.emit(libraries)
-        if not self.already_inside_project:
-
-            self._expand_change_env()
-            self.already_inside_project = True
-            self.change_env_in_same_directory.clear()
-            if libraries:
-                for envs in virtual_env_names:
-                    self.change_env_in_same_directory.addItem(envs, 20)
-        self.setPythonExecPath(pythonPath)
+    def handleListLibraries(self, libraries: list):
         self.addItems(libraries)
+
+    def on_venvs_loaded(self, directory_path, current_venv, virtual_env_names):
+        # Block signals to prevent the signal loop
+        self.change_env_in_same_directory.clear()
+        self.change_env_in_same_directory.blockSignals(True)
+        self.current_dir = directory_path
+
+        self.setPythonExecPath([env['python_path'] for env in virtual_env_names if env['venv_name'] == current_venv][0])
+        if virtual_env_names:
+            for env in virtual_env_names:
+                self.change_env_in_same_directory.addItem(env['venv_name'])
+
+
+            self.current_loaded_virtual_envs_list = virtual_env_names
+            self._expand_change_env() # Animate the box
+            self.change_env_in_same_directory.setCurrentText(current_venv)
+            # Unblock signals now that we are done modifying
+            self.change_env_in_same_directory.blockSignals(False)
+
+            # Manually trigger the load for the first item
+            self._change_virtual_env(directory_path, current_venv)
+        else:
+            self.libraryList.clear() # No venvs found
+            QMessageBox.information(self, "No Environments", "No virtual environments found in this directory.")
+            self.change_env_in_same_directory.blockSignals(False)
 
 
     def selectLocation(self, event):
@@ -194,11 +356,12 @@ class Library(QWidget):
         if directoryPath:
             self.already_inside_project = False
             self.labelLocation.setText(f"{directoryPath}")
-            self.fetch_list_of_libraries.get_details(directoryPath, "")
+            self.worker.emit_signal_for_virtual_envs(directoryPath, "./findLocalEnv")
+            self.worker.virtual_envs.connect(lambda vens_list: self.venv_loaded.emit( directoryPath,vens_list[0].get('venv_name'), vens_list))
 
     def selectLocationFromMain(self, directoryPath, venv_name, virtual_envs):
             self.labelLocation.setText(f"{directoryPath}")
-            self.fetch_list_of_libraries.get_details(directoryPath, venv_name)
+            self.venv_loaded.emit(directoryPath, venv_name, virtual_envs)
 
     def rankQuery(self, dataList, query):
         lowerQuery = query.lower()
@@ -215,7 +378,7 @@ class Library(QWidget):
     def addItems(self, itemsList):
         self.toolTipCache = {}
         self.searchBar.show()
-        self.all_items_data = itemsList
+        self.all_items_data = [items['metadata'] for items in itemsList]
         self.sortItemsList(True)
 
     def human_readable_size(self, size: int) -> str:
@@ -240,12 +403,12 @@ class Library(QWidget):
         if not query:
             items = sorted(self.all_items_data, key=lambda x: x['name'])
         else:
-            items = self.rankQuery(self.all_items_data, query)
+            items = self.rankQuery([item_data for item_data in self.all_items_data], query)
 
         # Clear the UI and re-populate it with the sorted list
         self.libraryList.clear()
         self.itemMap.clear()
-
+        print([item['name'] for item in items])
         for item in items:
             listLibraryWidget = QWidget()
             listLibraryWidget.setObjectName("listLibraryWidget")
@@ -254,16 +417,16 @@ class Library(QWidget):
             # All the QLabels
 
             # Name of the Library
-            nameLibraryPanel = QLabel(item["name"])
+            nameLibraryPanel = QLabel(item['name'])
             nameLibraryPanel.setObjectName("nameLibraryPanel")
 
             # Version of the Library
-            versionLibraryPanel = QLabel(item["version"])
+            versionLibraryPanel = QLabel(item['version'])
             versionLibraryPanel.setObjectName("versionLibraryPanel")
 
             # Tag of The Library I means Installed outside and D means Downloaded from the world wide web
             sizepanel = QLabel()
-            sizepanel.setText(self.human_readable_size(item["size"]))
+            sizepanel.setText(self.human_readable_size(item['size']))
             sizepanel.setFixedWidth(50)
             sizepanel.setObjectName("sizeLibraryPanel")
 
@@ -286,19 +449,25 @@ class Library(QWidget):
             self.libraryList.addItem(listItem)
             self.libraryList.setItemWidget(listItem, listLibraryWidget)
 
-            if item["name"] in self.toolTipCache:
-                listLibraryWidget.setToolTip(self.toolTipCache[item["name"]])
-            else:
-                listLibraryWidget.setToolTip("Loading details...")
-            self.itemMap[item["name"]] = (listLibraryWidget, listItem)
+            listLibraryWidget.setToolTip(
+                f"""
+                <p style="width:400px">
+                <b>Summary: </b> {item['summary'].strip()} <br>
+                <b>Author: </b> {item['author'] if item['author'] else "<em style='color:grey'>No Author Provided</em>"} <br>
+                <b>Requires Dirtribution: </b> {", ".join(item['requires_dist']) if item['requires_dist'] else "<em style='color:grey'>No Dependencies</em>"} <br>
+                <b>Provides Extra:</b> {", ".join(item["provides_extra"])if item["provides_extra"] else "<em style='color:grey'>Doesn't provide anything else</em>"}
+                </p>"""
+            )
+
+            self.itemMap[item['name']] = (listLibraryWidget, listItem)
             uninstallButton.clicked.connect(
-                lambda checked=False, packageName=item["name"]: self.startLibraryUninstaller(packageName))
+                lambda checked=False, packageName=item['name'], uninstall_button=uninstallButton: self.startLibraryUninstaller(packageName, uninstallButton))
         if emit:
             self.listLibraryRefreshed.emit()
         else:
             self.searchBarTypingTimer.start()
 
-    def startLibraryUninstaller(self, packageName):
+    def startLibraryUninstaller(self, packageName, uninstall_button: QPushButton):
         reply = QMessageBox.warning(
             self,
             'Confirm Uninstall',
@@ -308,47 +477,36 @@ class Library(QWidget):
         )
         if reply == QMessageBox.StandardButton.Yes:
             if packageName in self.itemMap:
-                widget = self.itemMap[packageName][0]
-                widget.setToolTip("Uninstalling...")
-            self.uninstallManager.requestUninstall(
-                self.pythonExecPath, packageName)
+                uninstall_button.setIcon(
+                    QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', ''))
+                )
+            self.uninstallManager = Uninstall(self.pythonExecPath, packageName, uninstall_button)
+            self.uninstallManager.finished.connect(self.onUninstallFinished)
+            self.uninstallManager.finished.connect(self.uninstallManager.deleteLater)
+            self.uninstallManager.start()
 
-    def searchItemsInTheLibrary(self):
-        pass
+    def refetch_libraries(self):
+        self._change_virtual_env(self.current_dir, self.current_virtual_env)
 
-    @pyqtSlot(str, bool)
-    def onUninstallFinished(self, packageName, success):
-        if success:
+    @pyqtSlot(int, str, str, QPushButton)
+    def onUninstallFinished(self, success, packageName, python_path, uninstall_button: QPushButton):
+
+        def _pop_item_in_sometime(self):
             listItem = self.itemMap.pop(packageName)
             if listItem:
                 row = self.libraryList.row(listItem[1])
                 self.libraryList.takeItem(row)
-
-    def startAllTooltipFetches(self):
-        for package_name, widget in self.itemMap.items():
-            widget[0].setToolTip("Fetching details...")
-            self.getLibraryDetails.fetchDetailLibraryDetails(
-                self.pythonExecPath, package_name)
-
-    @pyqtSlot(str, dict)
-    def getLibraryDetailsThroughClass(self, name, libraryDetails: dict):
-        listItem = self.itemMap.get(name)
-        if listItem:
-            summary = libraryDetails["Summary"]
-            author = libraryDetails["Author"]
-            requires = libraryDetails["Requires"]
-            required_by = libraryDetails["Required-by"]
-            tooltip = f"""
-            <p style="width:400px">
-            <b>Summary:</b> {summary.strip()} <br>
-            <b>Author:</b> {author if author else "<em style='color:grey'>No Author Provided</em>"} <br>
-            <b>Requires:</b> {requires if requires else "<em style='color:grey'>No Dependencies</em>"} <br>
-            <b>Required-by:</b> {required_by if required_by else "<em style='color:grey'>No Dependencies</em>"}
-            </p>"""
-            listItem[0].setToolTip(tooltip)
-            self.toolTipCache[name] = tooltip
+        if success:
+            uninstall_button.setIcon(
+                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', ''))
+            )
+            QTimer.singleShot(2000, lambda: _pop_item_in_sometime(self))
+        else:
+            uninstall_button.setIcon(
+                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', ''))
+            )
+            uninstall_button.setEnabled(False)
+        self.uninstallManager = None
 
     def closeEvent(self, event):  # type: ignore
-        self.getLibraryDetails.stop()
-        self.uninstallManager.stop()
         super().closeEvent(event)

@@ -13,7 +13,10 @@ def requestInfo(API_ENDPOINT, timeout = 10) -> dict:
             return {'response': 404}
     except ConnectionError:
         return {'response': 500}
-
+    except TimeoutError:
+        return {'response': 504}
+    except Exception: #Implement a custom logger
+        return {'response': 500}
 
 class RequestDetails(QObject):
 
