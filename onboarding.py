@@ -4,10 +4,10 @@ from PyQt6.QtWidgets import (
     QComboBox, QFileDialog, QFrame, QPushButton, QSizePolicy, QVBoxLayout, QLabel, QStackedWidget, QWidget
 )
 from PyQt6.QtCore import  QEasingCurve, QPropertyAnimation, QSize, Qt, pyqtSignal
-from ui.control_bar import ControlBar
-from workers.find_python_interepreaters import PythonInterpreters
+from components.ui.control_bar import ControlBar
+from helpers.find_python_interepreaters import PythonInterpreters
 from helpers.helper_classes import LineEdit, Toast
-from library.library import LibraryThreads
+from components.library.library import LibraryThreads
 
 class OnboardingPage(QWidget):
 

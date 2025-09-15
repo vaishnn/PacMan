@@ -3,8 +3,8 @@ from PyQt6 import QtCore
 from PyQt6.QtCore import QAbstractListModel, QEvent, QModelIndex, QPoint, QRect, QSize, QThread, QTimer, QVariant, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import QLineEdit, QListView,  QSizePolicy, QStyle,  QStyledItemDelegate, QVBoxLayout, QWidget
-from installer.pypi import PyPiRunner
-from installer.request_pypi import RequestDetails
+from components.installer.pypi import PyPiRunner
+from components.installer.request_pypi import RequestDetails
 
 DataRole = Qt.ItemDataRole.UserRole + 1
 

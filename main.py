@@ -7,9 +7,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from helpers.other_functions import loadFont
-from helpers.yaml_pre_processing import load_config
+from helpers.other_functions import load_config
 from pacman import PacMan
-from installer.pypi import get_app_support_directory
+from components.installer.pypi import get_app_support_directory
 
 
 def load_state(file_name = "state.json"):

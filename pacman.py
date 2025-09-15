@@ -5,19 +5,18 @@ from PyQt6.QtWidgets import (
     QMainWindow, QHBoxLayout, QVBoxLayout,
     QWidget, QLabel, QStackedWidget
 )
-from dependency_tree.dependency_tree import DependencyTree
+from components.dependency_tree.dependency_tree import DependencyTree
 from PyQt6.QtCore import Qt, pyqtSignal
-from installer.pypi import save_file
-from ui.control_bar import ControlBar
-from library.library import Library
+from components.installer.pypi import save_file
+from components.ui.control_bar import ControlBar
+from components.library.library import Library
 from onboarding import OnboardingPage
-from workers.saver import Save
-from about.about import About
-from installer.installer import Installer
-from analysis.analysis import Analysis
-from setting.setting import Setting
+from components.about.about import About
+from components.installer.installer import Installer
+from components.analysis.analysis import Analysis
+from components.setting.setting import Setting
 
-from installer.pypi import get_app_support_directory
+from components.installer.pypi import get_app_support_directory
 
 def save_state(data, file_name = "state.json"):
     directory = get_app_support_directory()
@@ -66,8 +65,6 @@ class PacMan(QMainWindow):
         self.container.setObjectName("mainWindowContainer")
         self._setup_main_app_ui()
         self._onboarding_steps()
-        self.quit = Save()
-        self.quit.finished.connect(self.close)
         self._saving = False
 
     def _extra_content(self):

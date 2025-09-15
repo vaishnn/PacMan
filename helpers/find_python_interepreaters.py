@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 
-from helpers.where_python import where_python_location
+from helpers.other_functions import where_python_location
 
 class PythonInterpreters(QObject):
     release_details = pyqtSignal(dict)
