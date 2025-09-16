@@ -1,5 +1,5 @@
-from PyQt6.QtCore import QEvent, QPoint, QTimer, QUrl, Qt
-from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtCore import QEvent, QPoint, QRect, QTimer, QUrl, Qt
+from PyQt6.QtGui import QCursor, QDesktopServices
 from PyQt6.QtWidgets import QFrame, QLabel, QScrollArea, QVBoxLayout, QWidget
 
 
@@ -50,8 +50,75 @@ class InteractiveToolTip(QFrame):
 
         self._target_widget = None
 
+
+        self._polling_timer = QTimer(self)
+        self._polling_timer.setInterval(250) # Check cursor position every 250ms
+        self._polling_timer.timeout.connect(self._check_cursor_position)
+
     def _handle_link_click(self, link: str):
         QDesktopServices.openUrl(QUrl(link))
+
+    def schedule_show(self, content, pos, target_widget):
+        """Starts a timer to show the tooltip, now tracking the target widget."""
+        self.scroll_area.verticalScrollBar().setValue(0) #type: ignore
+        self._hide_timer.stop()
+        self._pending_content = content
+        self._pending_pos = pos
+        self._target_widget = target_widget # Store the target
+        self._show_timer.start()
+
+    def _execute_show(self):
+        """This method is called by the show_timer's timeout."""
+        if self._pending_content and self._pending_pos:
+            self.set_content(self._pending_content)
+
+            self.scroll_area.verticalScrollBar().setValue(0) #type: ignore
+            self.scroll_area.adjustSize()
+            self.setFixedWidth(550)
+            self.adjustSize()
+            self.move(self._pending_pos)
+            self.show()
+            self._polling_timer.start() # Start polling when shown
+
+    def hide_now(self):
+        """A robust hide method that stops all timers."""
+        self.scroll_area.verticalScrollBar().setValue(0) #type: ignore
+        self._show_timer.stop()
+        self._hide_timer.stop()
+        self._polling_timer.stop() # <-- Stop the polling timer
+        self.hide()
+
+    def schedule_hide(self):
+        """Cancels any pending show and starts a timer to hide the tooltip."""
+        self._show_timer.stop()
+        # We don't use the hide timer anymore, we call hide_now directly
+        # from the polling check, but we'll leave the timer for other uses.
+        self._hide_timer.start()
+        # For immediate hiding when leaving the view, this is better:
+        # self.hide_now()
+
+    # --- ADD THE POLLING LOGIC ---
+
+    def _check_cursor_position(self):
+        """Periodically checks if the cursor is still over a valid area."""
+        # This can happen if the target widget is destroyed
+        if not self or not self._target_widget:
+            self.hide_now()
+            return
+
+        cursor_pos = QCursor.pos()
+
+        # Get the target widget's area in global screen coordinates
+        target_rect = self._target_widget.rect()
+        global_target_rect = QRect(
+            self._target_widget.mapToGlobal(target_rect.topLeft()),
+            target_rect.size()
+        )
+
+        # Hide if the cursor is outside BOTH the tooltip and its target widget
+        if not self.geometry().contains(cursor_pos) and not global_target_rect.contains(cursor_pos):
+            self.hide_now()
+
 
     def set_object_name(self, name):
         self.scroll_area.setObjectName(f"{name}ScrollArea")
@@ -77,6 +144,7 @@ class InteractiveToolTip(QFrame):
                 self._hide_timer.start()
         return super().eventFilter(watched_obj, event)
 
+
     def _show_at_cursor(self):
         """Shows the tooltip at the current cursor position."""
         if not self._target_widget:
@@ -88,10 +156,12 @@ class InteractiveToolTip(QFrame):
         self.show()
         # Ensure the tooltip resizes to its content
         self.adjustSize()
+        self._polling_timer.start()
 
     def enterEvent(self, event) -> None:
         """When the mouse enters the tooltip itself, cancel any pending hide action."""
         self._hide_timer.stop()
+        self._polling_timer.stop()
         super().enterEvent(event)
 
     def leaveEvent(self, a0):

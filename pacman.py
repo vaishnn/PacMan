@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QWidget, QLabel, QStackedWidget,
     QComboBox, QFileDialog, QPushButton, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QEasingCurve, QPropertyAnimation, QSize
+from PyQt6.QtCore import  Qt, pyqtSignal, QEasingCurve, QPropertyAnimation, QSize
 from components.dependency_tree.dependency_tree import DependencyTree
 from components.installer.pypi import save_file, get_app_support_directory
 from components.library.library import Library, LibraryThreads
@@ -15,7 +15,7 @@ from components.installer.installer import Installer
 from components.analysis.analysis import Analysis
 from components.setting.setting import Setting
 from helpers.find_python_interepreaters import PythonInterpreters
-from helpers.helper_classes import LineEdit, Toast
+from Qt.helper_classes import LineEdit, Toast
 
 def save_state(data, file_name = "state.json"):
     directory = get_app_support_directory()
@@ -187,19 +187,29 @@ class OnboardingPage(QWidget):
         self._setup_pages()
 
     def _setup_pages(self):
+        """
+        Sets up the individual pages that compose the onboarding flow and adds them to the stacked widget.
+        """
         self.stacked_widget.addWidget(self._create_location_page())
         self.stacked_widget.addWidget(self._loading_virtual_env())
         self.stacked_widget.setCurrentIndex(0)
 
-    def _create_page_container(self, name, margin = [0, 0, 0, 0]):
-        container = QWidget()
-        container.setObjectName(name)
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(*margin)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        return container
-
     def _create_location_page(self):
+        """
+        Creates the first page of the onboarding process, allowing the user to select
+        a project directory and providing options for virtual environment setup.
+
+        This page consists of:
+        - A `browse_label` (within `location_container`) which, when clicked,
+            triggers the `_select_location` method to open a file dialog.
+        - A `select_env` container, initially hidden, which will display options
+            to select an existing virtual environment or create a new one, once
+            a project directory has been chosen.
+
+        Returns:
+            QWidget: The fully configured container widget for the location
+                        and environment selection page.
+        """
         container = QWidget()
         self.page_layout = QVBoxLayout(container)
         self.page_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -231,7 +241,19 @@ class OnboardingPage(QWidget):
 
         return container
 
-    def _loading_virtual_env(self):
+    @staticmethod
+    def _loading_virtual_env():
+        """
+        Creates a widget displaying a loading spinner.
+
+        This static method generates a QFrame containing a QLabel with a QMovie
+        (spinner GIF) to indicate a loading state. It's used to show progress
+        while the application is performing an operation, such as searching
+        for virtual environments.
+
+        Returns:
+            QFrame: A widget with a centered loading spinner.
+        """
         container = QFrame()
         layout = QVBoxLayout(container)
         spinner_label = QLabel()
@@ -244,6 +266,18 @@ class OnboardingPage(QWidget):
         return container
 
     def _populate_environment_container(self):
+        """
+        Populates the `self.select_env` frame with widgets for selecting or creating
+        virtual environments.
+
+        This method sets up the UI elements that allow the user to:
+        1. View and select an existing virtual environment found within the project directory.
+        2. Input a name for a new virtual environment and choose a global Python
+           interpreter from which to create it.
+
+        It initializes labels, combo boxes, line edits, and buttons, connecting
+        their actions to the appropriate methods for environment management.
+        """
         layout = QVBoxLayout(self.select_env)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -290,6 +324,9 @@ class OnboardingPage(QWidget):
         # layout.addStretch()
 
     def _set_existing_python_env(self):
+        """
+        Emits the selected project location and virtual environment details.
+        """
         current_venv = ""
         curr_dir = "".join(self.drop_down_for_selecting_virtual_env.currentText().split(":")[1:]).strip()
         virtual_envs = []
@@ -301,6 +338,10 @@ class OnboardingPage(QWidget):
         self.location_selected.emit(self.project_location, current_venv, virtual_envs)
 
     def _create_virtual_env(self):
+        """
+        Initiates the creation of a new virtual environment.
+        Validates the environment name and triggers environment creation via a worker.
+        """
         text = self.name_of_venv.toPlainText()
         env_names = [env.split(os.path.sep)[-1] for env in self.list_of_virtual_env]
 
@@ -317,6 +358,10 @@ class OnboardingPage(QWidget):
             )
 
     def _update_widget(self, code: int, venv_path: str, venv_name, all_venv_names):
+        """
+        Updates the UI based on the result of a virtual environment creation or discovery operation.
+        Switches to a loading screen or emits location_selected based on the provided code.
+        """
         if code == 0:
 
             self.stacked_widget.setCurrentIndex(1)
@@ -325,11 +370,19 @@ class OnboardingPage(QWidget):
         pass
 
     def commit_action(self, message: str):
+        """
+        Displays a toast message to the user.
+        """
         toast = Toast(self, message=message)
         toast.show()
 
 
     def _select_location(self, event):
+        """
+        Handles the mouse press event to select a project directory.
+        Opens a file dialog, updates the UI with the selected directory,
+        and initiates animations and data fetching for virtual environments.
+        """
         if self.animation_running:
             return
 

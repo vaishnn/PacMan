@@ -26,6 +26,7 @@ ui:
   dimensions:
     fontSize:
       mainFont: 14
+      verysmall: "10px"
       small: "12px"
       default: "13px"
       medium: "14px"
@@ -159,6 +160,10 @@ stylesheet:
       padding: {{ ui.dimensions.padding.small }};
       font-size: {{ ui.dimensions.fontSize.default }};
     }
+    #licenseLibraryPanel {
+      color: {{ ui.colors.text.muted }};
+      font-size: {{ ui.dimensions.fontSize.verysmall }};
+    }
     #searchBarInLibraryListWidget:hover, #searchBarInstaller:hover { background-color: {{ ui.colors.background.hover }}; }
     #searchBarInLibraryListWidget:pressed, #searchBarInstaller:pressed { background-color: {{ ui.colors.background.pressed }}; }
     #libraryListViewInstaller, #libraryList {
@@ -178,6 +183,16 @@ stylesheet:
     #versionLibraryPanel {
       font-style: italic;
       color: {{ ui.colors.text.muted }};
+    }
+    #listLibraryWidgetToolTipScrollArea {
+      background-color: {{ ui.colors.background.main }};
+      border-radius: {{ ui.dimensions.borderRadius.large }};
+      padding: 5px;
+    }
+    #PyPIitemDelegateTooltipScrollArea {
+      background-color: {{ ui.colors.background.main }};
+      border-radius: {{ ui.dimensions.borderRadius.large }};
+      padding: 5px;
     }
     #deleteButtonFromLibraryListWidget {
       color: {{ ui.colors.text.muted }};
@@ -238,6 +253,16 @@ stylesheet:
       height: 20px;
       margin-right: 5px;
     }
+    #change_env_in_same_directory {
+      background-color: {{ ui.colors.border.dark }};
+      color: {{ ui.colors.text.normal }};
+      border: 1px solid {{ ui.colors.border.light }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding-left: {{ ui.dimensions.padding.large }};
+      padding-right: {{ ui.dimensions.padding.large }};
+      font-size: {{ ui.dimensions.fontSize.default }};
+    }
+    #change_env_in_same_directory:hover { background-color: {{ ui.colors.background.hover }}; }
 
   initScreen: |
     #container {

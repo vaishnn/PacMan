@@ -1,14 +1,177 @@
+import json
 import subprocess
 from PyQt6 import QtCore
 from PyQt6.QtCore import QAbstractListModel, QEvent, QModelIndex, QPoint, QRect, QSize, QThread, QTimer, QVariant, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import QLineEdit, QListView,  QSizePolicy, QStyle,  QStyledItemDelegate, QVBoxLayout, QWidget
+from Qt.CustomToolTip import InteractiveToolTip
 from components.installer.pypi import PyPiRunner
-from components.installer.request_pypi import RequestDetails
 
+import datetime
 DataRole = Qt.ItemDataRole.UserRole + 1
 
+def format_pypi_tooltip_html(pypi_data, font_family_name):
+    """
+    Takes a dictionary with PyPI info and formats it into a styled HTML string.
+    """
+    info = pypi_data.get('info', {})
+    if not info:
+        return ""
+
+    table_rows = []
+
+    # Core Info
+    if info.get('name'):
+        table_rows.append(f'<tr><td class="tooltip-label">Name</td><td class="tooltip-value">{info["name"]}</td></tr>')
+    if info.get('version'):
+        table_rows.append(f'<tr><td class="tooltip-label">Version</td><td class="tooltip-value">{info["version"]}</td></tr>')
+    if info.get('summary'):
+        table_rows.append(f'<tr><td class="tooltip-label">Summary</td><td class="tooltip-value">{info["summary"].strip()}</td></tr>')
+
+    # People (Author & Maintainer)
+    author = info.get('author')
+    author_email = info.get('author_email')
+    author_str = ""
+    if author:
+        author_str = author
+        if author_email:
+            author_str += f" &lt;{author_email}&gt;" # Use HTML entities for < >
+        table_rows.append(f'<tr><td class="tooltip-label">Author</td><td class="tooltip-value">{author_str}</td></tr>')
+
+    maintainer = info.get('maintainer')
+    maintainer_email = info.get('maintainer_email')
+    maintainer_str = ""
+    if maintainer:
+        maintainer_str = maintainer
+        if maintainer_email:
+            maintainer_str += f" &lt;{maintainer_email}&gt;"
+        # Only show maintainer if they are different from the author
+        if maintainer_str and maintainer_str != author_str:
+            table_rows.append(f'<tr><td class="tooltip-label">Maintainer</td><td class="tooltip-value">{maintainer_str}</td></tr>')
+
+    # Requirements
+    if info.get('requires_python'):
+        table_rows.append(f'<tr><td class="tooltip-label">Requires Python</td><td class="tooltip-value">{info["requires_python"]}</td></tr>')
+    if info.get('requires_dist'):
+        deps_html = "<br>".join(info['requires_dist'])
+        table_rows.append(f'<tr><td class="tooltip-label">Dependencies</td><td class="tooltip-value">{deps_html}</td></tr>')
+
+    # License Info (Always shows License field)
+    license_val = info.get('license') if info.get('license') else "<span class='tooltip-placeholder'>Not Provided</span>"
+    table_rows.append(f'<tr><td class="tooltip-label">License</td><td class="tooltip-value">{license_val}</td></tr>')
+    if info.get('license_file'):
+        table_rows.append(f'<tr><td class="tooltip-label">License File</td><td class="tooltip-value">{info["license_file"]}</td></tr>')
+
+    # Links, Keywords, and Details
+    if info.get('project_url'):
+        url = info['project_url']
+        link_html = f'<a href="{url}" style="color: #8ab4f8;">{url}</a>'
+        table_rows.append(f'<tr><td class="tooltip-label">Project URL</td><td class="tooltip-value">{link_html}</td></tr>')
+    if info.get('keywords'):
+        table_rows.append(f'<tr><td class="tooltip-label">Keywords</td><td class="tooltip-value">{info["keywords"]}</td></tr>')
+    if info.get('provides_extra'):
+        provides_html = "<br>".join(info['provides_extra'])
+        table_rows.append(f'<tr><td class="tooltip-label">Provides</td><td class="tooltip-value">{provides_html}</td></tr>')
+    if info.get('classifiers'):
+        classifiers_html = "<br>".join(info['classifiers'])
+        table_rows.append(f'<tr><td class="tooltip-label">Classifiers</td><td class="tooltip-value">{classifiers_html}</td></tr>')
+
+    all_rows_html = "\n".join(table_rows)
+
+    # --- Handle special top/bottom sections ---
+
+    # Create a prominent warning if the package is yanked
+    yanked_html = ""
+    if info.get('yanked'):
+        reason = info.get('yanked_reason') or "No reason provided."
+        yanked_html = f"""
+        <div class="yanked-warning">
+            <strong>Warning: This version has been yanked.</strong>
+            <br><span class="yanked-reason">Reason: {reason}</span>
+        </div>
+        """
+
+    # Create a footer for the fetch timestamp
+    footer_html = ""
+    if pypi_data.get('fetched_at'):
+        try:
+            # Parse ISO 8601 timestamp and format it nicely
+            dt_obj = datetime.datetime.fromisoformat(pypi_data['fetched_at'].replace('Z', '+00:00'))
+            # Format to something like "16 Sep 2025, 03:07 PM IST"
+            dt_obj = dt_obj.astimezone(datetime.timezone(datetime.timedelta(hours=5, minutes=30))) # Convert to IST
+            fetched_at_str = dt_obj.strftime('%d %b %Y, %I:%M %p %Z')
+            footer_html = f'<div class="tooltip-footer">Cached: {fetched_at_str}</div>'
+        except (ValueError, TypeError):
+            pass # Ignore if timestamp is invalid
+
+    # --- Assemble final HTML ---
+    return f"""
+    <style>
+        .tooltip-container {{ font-family: '{font_family_name}', sans-serif; font-size: 14px; max-width: 550px; line-height: 1.5; }}
+        .tooltip-table {{ border-spacing: 0; width: 100%; }}
+        .tooltip-table td {{ padding: 2px 8px; vertical-align: top; }}
+        .tooltip-label {{ font-weight: 600; white-space: nowrap; text-align: left; padding-right: 12px; color: #999999; }}
+        .tooltip-value {{ color: #FFFFFF; word-break: break-word; }}
+        .tooltip-placeholder {{ color: #777777; font-style: italic; }}
+        a {{ text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+        .yanked-warning {{ background-color: #5c1b16; color: #f8d7da; padding: 8px; border-radius: 4px; margin-bottom: 10px; border: 1px solid #c93a3a; }}
+        .yanked-reason {{ color: #f5c6cb; }}
+        .tooltip-footer {{ font-size: 11px; color: #777777; text-align: right; padding-top: 8px; border-top: 1px solid #333333; margin-top: 8px; }}
+    </style>
+    <div class="tooltip-container">
+        {yanked_html}
+        <table class="tooltip-table">
+            {all_rows_html}
+        </table>
+        {footer_html}
+    </div>
+    """
+
+class GettingInstallerLibraryDetails(QThread):
+    """
+    A QThread subclass that fetches details for a list of Python libraries
+    using an external Go executable.
+
+    It executes the Go program with the provided list of libraries, captures
+    its JSON output, and emits the parsed dictionary result via the
+    `finished` signal.
+    """
+    finished = pyqtSignal(dict)
+    def __init__(self, go_executable, list_of_libraries, parent=None):
+        super().__init__(parent)
+        self.go_executable = go_executable
+        self.list_of_libraries = list_of_libraries
+
+    def run(self):
+        if self.list_of_libraries:
+            result = subprocess.run([self.go_executable, *self.list_of_libraries], capture_output=True, text=True)
+            if result.stderr:
+                print(result.stderr)
+                self.finished.emit({})
+            else:
+                try:
+                    data = json.loads(result.stdout)
+                    if isinstance(data, dict):
+                        self.finished.emit(data)
+                except Exception as e:
+                    self.finished.emit({})
+                    print(e)
+                    print(result.stdout)
+        else:
+            self.finished.emit({})
+
+
+
 class InstallerLibraries(QThread):
+    """
+    A QThread subclass for installing a single Python library using pip
+    in a separate background thread.
+
+    It executes the 'pip install' command with the specified Python executable
+    and library name, capturing the output and emitting a signal upon completion
+    indicating success or failure.
+    """
     finished = pyqtSignal(int, QModelIndex)
     def __init__(self ,python_exec_path, library_name, model_index: QModelIndex) -> None:
         super().__init__()
@@ -41,10 +204,26 @@ class InstallerLibraries(QThread):
             self.finished.emit(-1, self.model_index) # Use -1 for exceptions
 
 class PyPIitemDelegate(QStyledItemDelegate):
+    """
+    A custom QStyledItemDelegate for rendering PyPI package items in a QListView.
+
+    This delegate provides a rich, interactive user interface for each library
+    item. It customizes the painting to display the library's name, version,
+    and an install status icon. It also handles mouse events to provide hover
+    effects, show detailed tooltips with package information, and detect clicks
+    on the install icon to trigger an installation process.
+
+    Signals:
+        installClicked (QModelIndex): Emitted when the user clicks the install icon for an item.
+    """
     installClicked = pyqtSignal(QModelIndex)
     def __init__(self, config: dict, parent = None):
         super().__init__(parent)
         self.config = config
+
+
+        self.tooltip = InteractiveToolTip(parent)
+        self.tooltip.set_object_name("PyPIitemDelegateTooltip")
         self._pressedIndex = QModelIndex()
         self.color_hover = QColor(self.config.get('ui', {}).get(
             "colors", {}).get("background", {}).get("hover", QColor(255, 255, 255))
@@ -164,6 +343,29 @@ class PyPIitemDelegate(QStyledItemDelegate):
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("failed", "")
             ), self.button_color)
 
+    def helpEvent(self, event, view, option, index) -> bool:
+
+        if event.type() == QEvent.Type.ToolTip: #type: ignore
+            # Get the full data dictionary from the model
+            item_data = index.data(DataRole)
+            print(item_data)
+            if not item_data or 'description' not in item_data:
+                self.tooltip.hide()
+                return True
+
+            if item_data:
+                target = view.viewport() #type: ignore
+                self.tooltip.set_content(item_data['description'])
+                self.tooltip.adjustSize()
+                self.tooltip.schedule_show(item_data['description'], event.globalPos() + QPoint(15, 15), target) #type: ignore
+                # Position tooltip slightly offset from cursor
+                # self.tooltip.move(event.globalPos() + QPoint(15, 15)) #type: ignore
+                # self.tooltip.show()
+                return True
+
+        self.tooltip.hide()
+
+        return super().helpEvent(event, view, option, index)
 
     def updateEditorGeometry(self, editor, option, index) -> None:
         return super().updateEditorGeometry(editor, option, index)
@@ -196,6 +398,10 @@ class PyPIitemDelegate(QStyledItemDelegate):
         return QSize(0, 55)
 
     def _drawColoredPixmap(self, painter, rect: QRect, pixmap: QPixmap, color, bg_color = "", mask_color: QColor = QColor(Qt.GlobalColor.transparent)):
+        """
+        Draws a pixmap tinted with a specified color, optionally with a background.
+        It uses the pixmap's mask to apply the color, making it appear as a colored icon.
+        """
         mask = pixmap.createMaskFromColor(QColor(Qt.GlobalColor.transparent))
         painter.save()
         path = QPainterPath()
@@ -215,12 +421,29 @@ class PyPIitemDelegate(QStyledItemDelegate):
         painter.restore()
 
 class LibraryListModel(QAbstractListModel):
+    """
+    A custom QAbstractListModel for managing and presenting PyPI library data
+    to a QListView.
 
+    This model stores a list of dictionaries, where each dictionary represents
+    a PyPI package and can include details like 'name', 'version', 'status'
+    (e.g., 'install', 'installed', 'installing', 'failed'), and a 'description'
+    (which is pre-formatted HTML for a tooltip).
+
+    It provides data for display and custom roles, handles updates to library
+    details fetched from an external source, and signals when items are removed.
+
+    Signals:
+        remove_item (str): Emitted with the name of the library that has been removed from the model (e.g., if its version is "UNKNOWN").
+    """
     remove_item = pyqtSignal(str)
+
     def __init__(self, data = None, parent = None):
         super().__init__(parent)
         self._data = data if data else []
-        self.name_to_row = {data: i for i, data in enumerate(self._data)}
+
+    def set_name_to_row(self):
+        self.name_to_row = {data['name']: i for i, data in enumerate(self._data)}
 
     def rowCount(self, parent = None):
         return len(self._data)
@@ -234,11 +457,11 @@ class LibraryListModel(QAbstractListModel):
             return row_item
         if role == Qt.ItemDataRole.DisplayRole:
             return row_item.get('name', '')
-        if role == Qt.ItemDataRole.ToolTipRole:
-            description = row_item.get('description', '').strip()
-            if row_item.get('status') == "installing":
-                return description + "\nInstalling..."
-            return description
+        # if role == Qt.ItemDataRole.ToolTipRole:
+        #     description = row_item.get('description', '').strip()
+        #     if row_item.get('status') == "installing":
+        #         return description + "\nInstalling..."
+        #     return description
 
         return QVariant()
 
@@ -252,43 +475,21 @@ class LibraryListModel(QAbstractListModel):
         self._data = data
         self.endResetModel()
 
-    def updateData(self, name: str, data_dict: dict):
+    def updateData(self, data_dict: dict):
         # When the API has emitted some data related to the library
         _data = self._data.copy()
-        for i, item_data in enumerate(_data):
-            if item_data.get('name') == name:
-                if not data_dict.get('response') == 200:
-                    try:
-                        self._data.remove(item_data)
-                        self.remove_item.emit(item_data['name'])
-                    except ValueError:
-                        pass
-                else:
-                    summary = data_dict.get('summary', '')
-                    if not summary :
-                        self._data.remove(item_data)
-                        self.remove_item.emit(item_data['name'])
-                    else:
-                        license = data_dict.get('license', '')
-                        author = data_dict.get('author', '')
-                        requires_python = data_dict.get('requires_python', '')
+        for _, (item, item_data) in enumerate(data_dict.items()):
+            index_number = self.name_to_row[item]
+            tootlip = format_pypi_tooltip_html(item_data, 'figtree')
+            if item_data.get('info').get('version', "UNKNOWW") == "UNKNOWN":
+                self._data.pop(index_number)
+                self.remove_item.emit(item)
+                continue
+            self._data[index_number].update({'description': tootlip})
+            self._data[index_number].update({'version': item_data['info']['version']})
+            idx = self.index(index_number, 0, QModelIndex())
+            self.dataChanged.emit(idx, idx)
 
-                        self._data[i].update(
-                            {
-                                'description': f"""
-                                <p style="width:400px">
-                                <b>Summary</b>: {summary} <br>
-                                <b>License</b>: {license.split('\n')[0].strip() if license else '<em style="color:grey">No License Provided</em>'} <br>
-                                <b>Author</b>: {author if author else '<em style="color:grey">No Author Provided</em>'} <br>
-                                <b>Requires Python</b>: {requires_python if requires_python else '<em style="color:grey">No Python Version Provided</em>'}
-                                </p>
-                                """,
-                                'version': data_dict.get('version', '')
-                            }
-                        )
-                index = self.index(i)
-                self.dataChanged.emit(index, index)
-                break
 
 class Installer(QWidget):
     """Installer widget for installing libraries"""
@@ -319,6 +520,7 @@ class Installer(QWidget):
         # Setup timers and signals for fetching list of libraries
         self._setup_timers()
         self._setup_signals_for_fetching_libraries()
+        self.get_details = None
 
     def _setup_ui(self):
         # Initialize the main layout
@@ -372,10 +574,6 @@ class Installer(QWidget):
         self.searchTimer.setSingleShot(True)
         self.searchTimer.timeout.connect(self.filterList)
 
-        # Fetch Details Timer
-        self.getDetails = RequestDetails(
-            TIMEOUT=self.config.get('controls', {}).get('installer', {}).get('detailsTimeout', 1000)
-        )
         self.fetch_details_timer = QTimer()
         self.fetch_details_timer.setInterval(1000)
         self.fetch_details_timer.setSingleShot(True)
@@ -398,8 +596,9 @@ class Installer(QWidget):
     def fetchDetails(self):
         # Fetch details of libraries
         if self.sortedMatches:
-            for library in self.sortedMatches:
-                self.getDetails.fetch_details(API_ENDPOINT=self.API_ENDPOINT, library=library)
+            self.get_details = GettingInstallerLibraryDetails('./library_details', self.sortedMatches)
+            self.get_details.finished.connect(self.sourceModel.updateData)
+            self.get_details.start()
 
     def _show_installed_flag(self, return_code, model_index: QModelIndex):
         self.installerThread = None
@@ -429,7 +628,6 @@ class Installer(QWidget):
         self.scraperPyPI.listOfLibraries.connect(self.getAllLibraries)
         self.scraperPyPI.startFetching()
         self.delegate.installClicked.connect(self._install_library)
-        self.getDetails.fetchedDetails.connect(self.sourceModel.updateData)
 
 
     def getAllLibraries(self, libraries: list):
@@ -459,6 +657,8 @@ class Installer(QWidget):
             self.sortedMatches = self.sortedMatches[:50]
             self.sortedMatches_with_install = [{'name': name, 'status': 'install'} for name in self.sortedMatches]
 
+
         self.populationFinished.emit()
         self.fetch_details_timer.start(1000)
         self.sourceModel.setDataList(self.sortedMatches_with_install)
+        self.sourceModel.set_name_to_row()

@@ -23,8 +23,9 @@ type Metadata struct {
 	Size                 int64    `json:"size"`
 	Author               string   `json:"author"`
 	License              string   `json:"license"`
+	LicenseExpression    string   `json:"license_expression"`
 	LicenseFile          []string `json:"license_file"`
-	Classifiers          []string `json:"classifiers"`
+	Classifiers          []string `json:"classifier"`
 	RequiresDistribution []string `json:"requires_dist"`
 	RequiresPython       string   `json:"requires_python"`
 	ProjectUrl           []string `json:"project_url"`
@@ -51,6 +52,15 @@ type Job struct {
 type result struct {
 	LibraryIdx int
 	size       int64
+}
+
+func (libraries *libraries) remove(name string) {
+	for index, installed := range libraries.Installed {
+		if name == installed.Metadata.Name {
+			libraries.Installed = append(libraries.Installed[:index], libraries.Installed[index+1:]...)
+			break
+		}
+	}
 }
 
 // Get the path to the site-packages directory within a virtual environment.
@@ -231,6 +241,7 @@ func main() {
 
 	virtual_env_path := strings.TrimSpace(virtual_env_dir)
 	site_packages_path, err := get_installed_libraries_with_size(virtual_env_path)
+	site_packages_path.remove("")
 	if err != nil {
 		slog.Error("Error getting installed libraries", "error", err)
 		return

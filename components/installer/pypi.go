@@ -155,24 +155,23 @@ func main() {
 
 	dbMutex.Lock()
 	file, err := os.ReadFile(file_dir)
-	if err == nil {
-		if len(file) > 0 {
-			if err := json.Unmarshal(file, &package_database); err != nil {
-				slog.Error(fmt.Sprintf("Failed to unmarshal package database: %v", err))
-			}
+	if err != nil {
+		file, err := os.Create(file_dir)
+		if err != nil {
+			slog.Error("Failed to create file", "error", err)
+		}
+		file.Close()
+	}
+	if len(file) > 0 {
+		if err := json.Unmarshal(file, &package_database); err != nil {
+			slog.Error(fmt.Sprintf("Failed to unmarshal package database: %v", err))
 		}
 	}
+
 	dbMutex.Unlock()
 
 	signal_for_closing := make(chan os.Signal, 1)
 	signal.Notify(signal_for_closing, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		sig := <-signal_for_closing
-		slog.Info("Got the Signal for closing", "signal", sig)
-		save_data(file_dir)
-		os.Exit(0)
-	}()
 
 	packages := os.Args[1:]
 	var wg sync.WaitGroup
@@ -180,8 +179,10 @@ func main() {
 		if pkg == "" {
 			continue
 		}
-
-		if _, ok := package_database[pkg]; ok {
+		dbMutex.Lock()
+		_, ok := package_database[pkg]
+		dbMutex.Unlock()
+		if ok {
 			continue
 		}
 		wg.Add(1)
@@ -190,9 +191,11 @@ func main() {
 	wg.Wait()
 
 	current_packages := make(map[string]PyPIInfo)
+	dbMutex.Lock()
 	for _, pkg := range packages {
 		current_packages[pkg] = package_database[pkg]
 	}
+	dbMutex.Unlock()
 
 	var buffer bytes.Buffer
 	multi_writer := io.MultiWriter(os.Stdout, &buffer)
@@ -200,5 +203,6 @@ func main() {
 	encoder.SetEscapeHTML(false)
 	encoder.SetIndent("", " ")
 	encoder.Encode(current_packages)
+	save_data(file_dir)
 
 }
