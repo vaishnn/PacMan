@@ -468,8 +468,6 @@ class PacMan(QMainWindow):
         self.setMouseTracking(True)
         self.config = config
         self._extra_content()
-        # self.loaded_components = IntNotifier()
-        # self.loaded_components.value_changed.connect(self.show_the_ui)
 
         # State variables
         self.state_variables = state_variables
@@ -536,7 +534,7 @@ class PacMan(QMainWindow):
             virtual_envs (list): A list of virtual environments.
         """
         self.main_stack.setCurrentWidget(self.container)
-        self.libraries.selectLocationFromMain(curr_dir, current_venv, virtual_envs)
+        self.libraries.selection_location_from_main(curr_dir, current_venv, virtual_envs)
 
     def _setup_main_app_ui(self):
         """
@@ -558,7 +556,6 @@ class PacMan(QMainWindow):
             "About": self.about
         }
         self.navLists = ["Libraries", "Installer", "Analysis", "Dependency Tree", "Settings", "About"]
-        # self.navLists = ["Libraries", "Analysis", "Dependency Tree", "Settings", "About"]
 
         self.libraries.current_state.connect(self._set_state_variables)
         self.libraries.libraries_emitter.connect(self._retrieve_libraries_content)
@@ -595,7 +592,7 @@ class PacMan(QMainWindow):
         Args:
             libraries (list): A list of libraries.
         """
-        self.current_libraries = [library['metadata']['name'] for library in libraries]
+        self.current_libraries = [library['name'] for library in libraries]
         if self._installer_populated:
             self._set_status_installer()
 
@@ -705,8 +702,4 @@ class PacMan(QMainWindow):
                 self.state_variables
             )
             save_file(self.installer.allLibraries)
-
-
-        # if "Installer" in self.contentDict:
-        #     self.contentDict["Installer"].getDetails.stopThread()
         super().closeEvent(a0)

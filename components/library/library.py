@@ -161,7 +161,6 @@ class Library(QWidget):
     - And more if we want
     """
     venv_loaded = pyqtSignal(str, str, list)
-    listLibraryRefreshed = pyqtSignal()
     show_env_box = pyqtSignal()
     libraries_emitter = pyqtSignal(list)
     current_state = pyqtSignal(str, str, list) # Current state of selected Project Folder and Virtual Env name selected
@@ -178,20 +177,19 @@ class Library(QWidget):
 
     def _init_properties(self):
         """Initializes non-UI properties, caches, and maps."""
-        self.toolTipCache = {}
-        self.itemMap = {}
+        self.item_map = {}
         self.animate_env_box = False
         self.current_loaded_virtual_envs_list = []
         self.current_virtual_env = ""
-        self.pythonExecPath = ""
+        self.python_exec_path = ""
         self.already_inside_project = False
         self.current_dir = ""
-        self.uninstallManager = None
+        self.uninstall_manager = None
 
     def _worker_thread(self):
         self.worker = LibraryThreads()
-        self.worker.details.connect(self.handleListLibraries)
-        self.worker.virtual_envs.connect(self.venv_loaded_connected)
+        self.worker.details.connect(self._handle_list_libraries)
+        self.worker.virtual_envs.connect(self._venv_loaded_connected)
 
     def _init_ui(self):
         """Initializes the main user interface layout and components."""
@@ -215,16 +213,16 @@ class Library(QWidget):
 
     def _setup_path_selection_bar(self, parent_layout):
         """Creates the top bar for selecting the virtual environment path."""
-        button_layout = QHBoxLayout()
+        layout = QHBoxLayout()
         margin = self.config.get("ui", {}).get("window", {}).get('library', {}).get("labelLocation", {}).get("contentMargin", [0, 0, 0, 0])
-        button_layout.setContentsMargins(*margin)
+        layout.setContentsMargins(*margin)
 
         # Label for selecting path
-        self.labelLocation = QLabel("Select Path")
-        self.labelLocation.setObjectName("labelLocation")
-        self.labelLocation.setFixedHeight(30)
-        self.labelLocation.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.labelLocation.mousePressEvent = self.selectLocation  # type: ignore
+        self.label_location = QLabel("Select Path")
+        self.label_location.setObjectName("labelLocation")
+        self.label_location.setFixedHeight(30)
+        self.label_location.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.label_location.mousePressEvent = self._select_location  # type: ignore
 
         # for changing the virtual env in the same directory
         self.change_env_in_same_directory = QComboBox()
@@ -234,10 +232,20 @@ class Library(QWidget):
         self.change_env_in_same_directory.currentIndexChanged.connect(self._on_env_inventory_in_same_directory)
         self.change_env_in_same_directory.setObjectName("change_env_in_same_directory")
 
+        inititalize_environment_button = QPushButton()
+        inititalize_environment_button.setIcon(QIcon(
+            self.config.get("paths", {}).get("assets", {}).get("images", {}).get("add"),
+        ))
+        inititalize_environment_button.setFixedSize(20, 30)
+        inititalize_environment_button.setContentsMargins(0, 0, 0, 0)
+        inititalize_environment_button.setIconSize(QSize(20, 20))
+        inititalize_environment_button.setObjectName("initializeEnvironmentButton")
 
-        button_layout.addWidget(self.labelLocation, 1)
-        button_layout.addWidget(self.change_env_in_same_directory, 2)
-        parent_layout.addLayout(button_layout)
+
+        layout.addWidget(self.label_location, 1)
+        layout.addWidget(self.change_env_in_same_directory, 2)
+        layout.addWidget(inititalize_environment_button)
+        parent_layout.addLayout(layout)
 
     def _on_env_inventory_in_same_directory(self):
         self.stacked_library_with_loading_screen.setCurrentIndex(1)
@@ -272,36 +280,31 @@ class Library(QWidget):
             return
         self.current_state.emit(directory, venv_name, self.current_loaded_virtual_envs_list)
         self.current_virtual_env = venv_name
+        self._set_python_exec_path([env['python_path'] for env in self.current_loaded_virtual_envs_list if env['venv_name'] == venv_name][0])
         self.worker.emit_signal_for_details(self.current_dir, './load_library', self.current_virtual_env)
 
     def _setup_search_bar(self, parent_layout):
         """Creates the search bar and its associated typing timer."""
-        self.searchBar = QLineEdit()
-        self.searchBar.hide()
-        self.searchBar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.searchBar.setFixedHeight(30)
-        self.searchBar.setPlaceholderText("Search for libraries")
-        self.searchBar.setObjectName("searchBarInLibraryListWidget")
-        self.searchBar.textChanged.connect(self.sortItemsList)
-        parent_layout.addWidget(self.searchBar)
-
-        # Timer to delay actions after user stops typing in the search bar
-        self.searchBarTypingTimer = QTimer()
-        self.searchBarTypingTimer.setSingleShot(True)
-        self.searchBarTypingTimer.setInterval(500)
-        self.searchBarTypingTimer.timeout.connect(self.whenTimerForToolTipIsFinished)
+        self.search_bar = QLineEdit()
+        self.search_bar.hide()
+        self.search_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.search_bar.setFixedHeight(30)
+        self.search_bar.setPlaceholderText("Search for libraries")
+        self.search_bar.setObjectName("searchBarInLibraryListWidget")
+        self.search_bar.textChanged.connect(self._sort_items_list)
+        parent_layout.addWidget(self.search_bar)
 
     def _setup_library_list(self, parent_layout):
         """Creates the main QListWidget for displaying the libraries."""
         library_layout = QVBoxLayout()
         library_layout.setContentsMargins(0, 10, 0, 0)
         self.stacked_library_with_loading_screen = QStackedWidget()
-        self.libraryList = QListWidget()
-        self.stacked_library_with_loading_screen.addWidget(self.libraryList)
+        self.library_list = QListWidget()
+        self.stacked_library_with_loading_screen.addWidget(self.library_list)
         self.loading_page = pacman.OnboardingPage._loading_virtual_env()
         self.stacked_library_with_loading_screen.addWidget(self.loading_page)
 
-        self.libraryList.setObjectName("libraryList")
+        self.library_list.setObjectName("libraryList")
         library_layout.addWidget(self.stacked_library_with_loading_screen)
 
         parent_layout.addLayout(library_layout)
@@ -309,27 +312,22 @@ class Library(QWidget):
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
         self.show_env_box.connect(self._expand_change_env)
-        self.venv_loaded.connect(self.on_venvs_loaded)
+        self.venv_loaded.connect(self._on_venv_loaded)
 
-    def whenTimerForToolTipIsFinished(self):
-        self.listLibraryRefreshed.emit()
-
-    def setPythonExecPath(self, path):
-        self.pythonExecPath = path
+    def _set_python_exec_path(self, path):
+        self.python_exec_path = path
         self.python_exec.emit(path)
 
-    def handleListLibraries(self, libraries: list):
-        self.addItems(libraries)
+    def _handle_list_libraries(self, libraries: list):
+        self._add_items(libraries)
 
-    def on_venvs_loaded(self, directory_path, current_venv, virtual_env_names):
+    def _on_venv_loaded(self, directory_path, current_venv, virtual_env_names):
         # Block signals to prevent the signal loop
         self.change_env_in_same_directory.clear()
         self.change_env_in_same_directory.blockSignals(True)
 
-        self.setPythonExecPath([env['python_path'] for env in virtual_env_names if env['venv_name'] == current_venv][0])
+
         if virtual_env_names:
-
-
             for env in deepcopy(virtual_env_names):
                 if os.path.exists(env["venv_path"]):
                     self.change_env_in_same_directory.addItem(env['venv_name'])
@@ -342,37 +340,38 @@ class Library(QWidget):
             self.current_loaded_virtual_envs_list = virtual_env_names
             self._expand_change_env() # Animate the box
             self.change_env_in_same_directory.setCurrentText(self.current_virtual_env)
+
             # Unblock signals now that we are done modifying
             self.change_env_in_same_directory.blockSignals(False)
 
             # Manually trigger the load for the first item
             self._change_virtual_env(self.current_dir, self.current_virtual_env)
         else:
-            self.libraryList.clear() # No venvs found
+            self.library_list.clear() # No venvs found
             QMessageBox.information(self, "No Environments", "No virtual environments found in this directory.")
             self.change_env_in_same_directory.blockSignals(False)
 
 
-    def selectLocation(self, event):
-        directoryPath = QFileDialog.getExistingDirectory(
+    def _select_location(self, event):
+        directory_path = QFileDialog.getExistingDirectory(
             self, "Select Directory")
-        if directoryPath:
-            self.current_dir = directoryPath
+        if directory_path:
+            self.current_dir = directory_path
             self.already_inside_project = False
-            self.labelLocation.setText(f"{directoryPath}")
-            self.worker.emit_signal_for_virtual_envs(directoryPath, "./findLocalEnv")
+            self.label_location.setText(directory_path)
+            self.worker.emit_signal_for_virtual_envs(directory_path, "./findLocalEnv")
 
-    def venv_loaded_connected(self, venv_list):
+    def _venv_loaded_connected(self, venv_list):
         self.current_virtual_env = venv_list[0].get('venv_name')
         self.venv_loaded.emit( self.current_dir, venv_list[0].get('venv_name'), venv_list)
 
-    def selectLocationFromMain(self, directoryPath, venv_name, virtual_envs):
+    def selection_location_from_main(self, directoryPath, venv_name, virtual_envs):
         self.current_dir = directoryPath
-        self.labelLocation.setText(f"{directoryPath}")
+        self.label_location.setText(f"{directoryPath}")
         self.current_virtual_env = venv_name
         self.venv_loaded.emit(directoryPath, venv_name, virtual_envs)
 
-    def rankQuery(self, dataList, query):
+    def _rank_query(self, dataList, query):
         lowerQuery = query.lower()
         matches = [
             item for item in dataList
@@ -384,11 +383,11 @@ class Library(QWidget):
         )
         return sortedMatches
 
-    def addItems(self, itemsList):
-        self.toolTipCache = {}
-        self.searchBar.show()
+    def _add_items(self, itemsList):
+        self.search_bar.show()
         self.all_items_data = [items['metadata'] for items in itemsList]
-        self.sortItemsList(True)
+        self.libraries_emitter.emit(self.all_items_data)
+        self._sort_items_list()
 
     def human_readable_size(self, size: int) -> str:
         if size/(1024*1024*1024)<0.1:
@@ -485,60 +484,59 @@ class Library(QWidget):
         </div>
         """
 
-
-    def sortItemsList(self, emit: bool = False):
+    def _sort_items_list(self):
         """
         Updates the library list with the provided items, applying search and sorting.
 
         Args:
             itemsList (list): A list of dictionaries, where each dictionary contains
                               metadata about an installed library.
-            emit (bool, optional): Whether to emit the listLibraryRefreshed signal after
+            emit (bool, optional): Whether to emit the list_library_refreshed signal after
                                    updating the list. Defaults to False, which starts a timer
                                    to delay the signal emission.
         """
-        self.searchBar.show()
-        query = self.searchBar.text()
+        self.search_bar.show()
+        query = self.search_bar.text()
         items = []
         if not query:
             items = sorted(self.all_items_data, key=lambda x: x['name'])
         else:
-            items = self.rankQuery([item_data for item_data in self.all_items_data], query)
+            items = self._rank_query([item_data for item_data in self.all_items_data], query)
 
         # Clear the UI and re-populate it with the sorted list
-        self.libraryList.clear()
-        self.itemMap.clear()
+        self.library_list.clear()
+        self.item_map.clear()
         for item in items:
-            listLibraryWidget = QWidget()
-            listLibraryWidget.setObjectName("listLibraryWidget")
-            listLibraryWidget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            listWidgetLayout = QHBoxLayout(listLibraryWidget)
+            list_lbrary_widget = QWidget()
+            list_lbrary_widget.setObjectName("listLibraryWidget")
+            list_lbrary_widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            list_widget_layout = QHBoxLayout(list_lbrary_widget)
             # All the QLabels
 
             # Name of the Library
-            nameLibraryPanel = QLabel(item['name'])
-            nameLibraryPanel.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-            nameLibraryPanel.setObjectName("nameLibraryPanel")
+            name_library_panel = QLabel(item['name'])
+            name_library_panel.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+            name_library_panel.setObjectName("nameLibraryPanel")
 
             # Version of the Library
-            versionLibraryPanel = QLabel(item['version'])
-            versionLibraryPanel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            versionLibraryPanel.setObjectName("versionLibraryPanel")
+            version_library_panel = QLabel(item['version'])
+            version_library_panel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            version_library_panel.setObjectName("versionLibraryPanel")
 
             # Tag of The Library I means Installed outside and D means Downloaded from the world wide web
-            sizepanel = QLabel()
-            sizepanel.setText(self.human_readable_size(item['size']))
-            sizepanel.setFixedWidth(60)
-            sizepanel.setObjectName("sizeLibraryPanel")
+            size_panel = QLabel()
+            size_panel.setText(self.human_readable_size(item['size']))
+            size_panel.setFixedWidth(60)
+            size_panel.setObjectName("sizeLibraryPanel")
 
             # Changing Properties of QLabels
-            uninstallButton = QPushButton()
-            uninstallButton.setFixedSize(30, 30)
-            uninstallButton.setObjectName("deleteButtonFromLibraryListWidget")
-            uninstallButton.setIcon(QIcon(
+            uninstall_button = QPushButton()
+            uninstall_button.setFixedSize(30, 30)
+            uninstall_button.setObjectName("deleteButtonFromLibraryListWidget")
+            uninstall_button.setIcon(QIcon(
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall"),
             ))
-            uninstallButton.setIconSize(QSize(22, 22))
+            uninstall_button.setIconSize(QSize(22, 22))
 
             classifiers = item.get('classifier', [])
             classifiers = classifiers if classifiers else []
@@ -562,34 +560,30 @@ class Library(QWidget):
             license_panel.setObjectName("licenseLibraryPanel")
             license_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-
             # Adding Widget in proper Order
-            listWidgetLayout.addWidget(sizepanel)
-            listWidgetLayout.addWidget(nameLibraryPanel)
-            listWidgetLayout.addWidget(license_panel)
-            listWidgetLayout.addWidget(versionLibraryPanel)
-            listWidgetLayout.addSpacing(100)
-            listWidgetLayout.addWidget(uninstallButton)
-            listItem = QListWidgetItem(self.libraryList)
+            list_widget_layout.addWidget(size_panel)
+            list_widget_layout.addWidget(name_library_panel)
+            list_widget_layout.addWidget(license_panel)
+            list_widget_layout.addWidget(version_library_panel)
+            list_widget_layout.addSpacing(100)
+            list_widget_layout.addWidget(uninstall_button)
+            listItem = QListWidgetItem(self.library_list)
             listItem.setSizeHint(QSize(0, 55))
-            self.libraryList.addItem(listItem)
-            self.libraryList.setItemWidget(listItem, listLibraryWidget)
+            self.library_list.addItem(listItem)
+            self.library_list.setItemWidget(listItem, list_lbrary_widget)
 
             interactiveToolTip = InteractiveToolTip(self)
-            interactiveToolTip.install_on(listLibraryWidget)
+            interactiveToolTip.install_on(list_lbrary_widget)
             interactiveToolTip.set_object_name("listLibraryWidgetToolTip")
             interactiveToolTip.set_content(self.format_tooltip_html(item, 'figtree'))
 
-            self.itemMap[item['name']] = (listLibraryWidget, listItem)
-            uninstallButton.clicked.connect(
-                lambda checked=False, packageName=item['name'], uninstall_button=uninstallButton: self.startLibraryUninstaller(packageName, uninstallButton))
-        if emit:
-            self.listLibraryRefreshed.emit()
-        else:
-            self.searchBarTypingTimer.start()
+            self.item_map[item['name']] = (list_lbrary_widget, listItem)
+            uninstall_button.clicked.connect(
+                lambda checked=False, packageName=item['name'], uninstall_button=uninstall_button: self.start_library_uninstaller(packageName, uninstall_button))
+
         self.stacked_library_with_loading_screen.setCurrentIndex(0)
 
-    def startLibraryUninstaller(self, packageName, uninstall_button: QPushButton):
+    def start_library_uninstaller(self, packageName, uninstall_button: QPushButton):
         reply = QMessageBox.warning(
             self,
             'Confirm Uninstall',
@@ -598,26 +592,26 @@ class Library(QWidget):
             QMessageBox.StandardButton.No
         )
         if reply == QMessageBox.StandardButton.Yes:
-            if packageName in self.itemMap:
+            if packageName in self.item_map:
                 uninstall_button.setIcon(
                     QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', ''))
                 )
-            self.uninstallManager = Uninstall(self.pythonExecPath, packageName, uninstall_button)
-            self.uninstallManager.finished.connect(self.onUninstallFinished)
-            self.uninstallManager.finished.connect(self.uninstallManager.deleteLater)
-            self.uninstallManager.start()
+            self.uninstall_manager = Uninstall(self.python_exec_path, packageName, uninstall_button)
+            self.uninstall_manager.finished.connect(self.on_uninstall_finished)
+            self.uninstall_manager.finished.connect(self.uninstall_manager.deleteLater)
+            self.uninstall_manager.start()
 
     def refetch_libraries(self):
         self._change_virtual_env(self.current_dir, self.current_virtual_env)
 
     @pyqtSlot(int, str, str, QPushButton)
-    def onUninstallFinished(self, success, packageName, python_path, uninstall_button: QPushButton):
+    def on_uninstall_finished(self, success, package_name, python_path, uninstall_button: QPushButton):
 
         def _pop_item_in_sometime(self):
-            listItem = self.itemMap.pop(packageName)
+            listItem = self.item_map.pop(package_name)
             if listItem:
-                row = self.libraryList.row(listItem[1])
-                self.libraryList.takeItem(row)
+                row = self.library_list.row(listItem[1])
+                self.library_list.takeItem(row)
         if success:
             uninstall_button.setIcon(
                 QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', ''))
@@ -628,4 +622,4 @@ class Library(QWidget):
                 QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', ''))
             )
             uninstall_button.setEnabled(False)
-        self.uninstallManager = None
+        self.uninstall_manager = None

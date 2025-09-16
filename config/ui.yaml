@@ -263,6 +263,15 @@ stylesheet:
       font-size: {{ ui.dimensions.fontSize.default }};
     }
     #change_env_in_same_directory:hover { background-color: {{ ui.colors.background.hover }}; }
+    #initializeEnvironmentButton {
+      background-color: transparent ;
+      color: {{ ui.colors.text.normal }};
+      border: 0px solid {{ ui.colors.border.light }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
+      padding-left: {{ ui.dimensions.padding.large }};
+      padding-right: {{ ui.dimensions.padding.large }};
+      font-size: {{ ui.dimensions.fontSize.default }};
+    }
 
   initScreen: |
     #container {

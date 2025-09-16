@@ -1,6 +1,4 @@
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
-
-
 import re
 import os
 from pathlib import Path

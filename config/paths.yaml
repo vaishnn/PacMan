@@ -13,6 +13,7 @@ paths:
       installing: "assets/icons/installing.png"
       installed: "assets/icons/installed.png"
       arrowDown: "assets/icons/fold.png"
+      add: "assets/icons/add.png"
   executables:
     library:
       darwin: "./go_app"

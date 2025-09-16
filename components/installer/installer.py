@@ -189,8 +189,6 @@ class InstallerLibraries(QThread):
                 check=False # Don't raise an exception on non-zero exit codes
             )
 
-            print("---STDOUT---")
-            print(result.stdout)
             print("---STDERR---")
             print(result.stderr)
 
@@ -348,7 +346,6 @@ class PyPIitemDelegate(QStyledItemDelegate):
         if event.type() == QEvent.Type.ToolTip: #type: ignore
             # Get the full data dictionary from the model
             item_data = index.data(DataRole)
-            print(item_data)
             if not item_data or 'description' not in item_data:
                 self.tooltip.hide()
                 return True
@@ -441,6 +438,7 @@ class LibraryListModel(QAbstractListModel):
     def __init__(self, data = None, parent = None):
         super().__init__(parent)
         self._data = data if data else []
+        self.name_to_row = {}
 
     def set_name_to_row(self):
         self.name_to_row = {data['name']: i for i, data in enumerate(self._data)}
@@ -536,13 +534,13 @@ class Installer(QWidget):
 
     def _setup_search_bar(self):
         # Set a search bar for searching libraries to install
-        self.searchBar = QLineEdit()
-        self.searchBar.setFixedHeight(30)
-        self.searchBar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self.searchBar.setObjectName("searchBarInstaller")
-        self.searchBar.setPlaceholderText("Search for libraries to install...")
-        self.searchBar.textChanged.connect(self.filterList) # ADDED: Connect search bar to filter method
-        self.mainLayout.addWidget(self.searchBar)
+        self.search_bar = QLineEdit()
+        self.search_bar.setFixedHeight(30)
+        self.search_bar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.search_bar.setObjectName("searchBarInstaller")
+        self.search_bar.setPlaceholderText("Search for libraries to install...")
+        self.search_bar.textChanged.connect(self.filterList) # ADDED: Connect search bar to filter method
+        self.mainLayout.addWidget(self.search_bar)
 
     def _setup_list_model(self):
         # Using Model/View Architecture
@@ -581,16 +579,24 @@ class Installer(QWidget):
 
 
     def set_status(self, libraries_list: list):
-        for library in libraries_list:
-            try:
+        for library in self.sortedMatches:
+            if library in libraries_list:
+                try:
+                    index = self.sortedMatches.index(library)
+                    self.sortedMatches_with_install[index].update({'status': 'installed'})
+                    index_of_model = self.sourceModel.name_to_row.get(library, -1)
+                    if index_of_model != -1:
+                        idx = self.sourceModel.index(index_of_model)
+                        self.sourceModel.dataChanged.emit(idx, idx)
+                except ValueError:
+                    continue
+            else:
                 index = self.sortedMatches.index(library)
-                self.sortedMatches_with_install[index].update({'status': 'installed'})
+                self.sortedMatches_with_install[index].update({'status': 'install'})
                 index_of_model = self.sourceModel.name_to_row.get(library, -1)
                 if index_of_model != -1:
                     idx = self.sourceModel.index(index_of_model)
                     self.sourceModel.dataChanged.emit(idx, idx)
-            except ValueError:
-                continue
 
 
     def fetchDetails(self):
@@ -601,7 +607,7 @@ class Installer(QWidget):
             self.get_details.start()
 
     def _show_installed_flag(self, return_code, model_index: QModelIndex):
-        self.installerThread = None
+
         name_of_library = model_index.data(DataRole).get('name')
         self.installed.emit()
         idx = self.sortedMatches.index(name_of_library)
@@ -611,6 +617,7 @@ class Installer(QWidget):
         else:
             self.sortedMatches_with_install[idx].update({'status': 'installed'})
             self.sourceModel.dataChanged.emit(model_index, model_index)
+        self.installerThread = None
 
     def _install_library(self, model_index: QModelIndex):
         name_of_library = model_index.data(DataRole).get('name')
@@ -632,7 +639,7 @@ class Installer(QWidget):
 
     def getAllLibraries(self, libraries: list):
         self.allLibraries = libraries
-        self.searchBar.setPlaceholderText("Search for libraries to install from the {:,} available libraries".format(len(self.allLibraries)))
+        self.search_bar.setPlaceholderText("Search for libraries to install from the {:,} available libraries".format(len(self.allLibraries)))
         self.filterList()
 
     def openAllEditors(self):
@@ -641,7 +648,7 @@ class Installer(QWidget):
             self.libraryListView.openPersistentEditor(index)
 
     def filterList(self):
-        searchText = self.searchBar.text().lower()
+        searchText = self.search_bar.text().lower()
         if not searchText:
             self.sortedMatches = self.allLibraries[:50]
             self.sortedMatches_with_install = [{'name': name, 'status': 'install'} for name in self.sortedMatches]

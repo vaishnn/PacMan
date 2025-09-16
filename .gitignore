@@ -105,6 +105,7 @@ setup.py
 findLocalEnv
 load_library
 inspect.json
+library_details
 
 # Website files
 website/
