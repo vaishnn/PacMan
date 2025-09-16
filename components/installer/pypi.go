@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -175,28 +174,31 @@ func main() {
 		os.Exit(0)
 	}()
 
-	scanner := bufio.NewScanner(os.Stdin)
-	encoder := json.NewEncoder(os.Stdout)
-	for scanner.Scan() {
-		packages := strings.Fields(scanner.Text())
-		var wg sync.WaitGroup
-		for _, pkg := range packages {
-			if pkg == "" {
-				continue
-			}
-
-			if _, ok := package_database[pkg]; ok {
-				continue
-			}
-			wg.Add(1)
-			go get_library_info(pkg, &wg)
+	packages := os.Args[1:]
+	var wg sync.WaitGroup
+	for _, pkg := range packages {
+		if pkg == "" {
+			continue
 		}
-		wg.Wait()
 
-		current_packages := make(map[string]PyPIInfo)
-		for _, pkg := range packages {
-			current_packages[pkg] = package_database[pkg]
+		if _, ok := package_database[pkg]; ok {
+			continue
 		}
-		encoder.Encode(current_packages)
+		wg.Add(1)
+		go get_library_info(pkg, &wg)
 	}
+	wg.Wait()
+
+	current_packages := make(map[string]PyPIInfo)
+	for _, pkg := range packages {
+		current_packages[pkg] = package_database[pkg]
+	}
+
+	var buffer bytes.Buffer
+	multi_writer := io.MultiWriter(os.Stdout, &buffer)
+	encoder := json.NewEncoder(multi_writer)
+	encoder.SetEscapeHTML(false)
+	encoder.SetIndent("", " ")
+	encoder.Encode(current_packages)
+
 }
