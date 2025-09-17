@@ -102,10 +102,12 @@ build/*
 setup.py
 
 # Compiled files
-findLocalEnv
+find_local_env
 load_library
-inspect.json
-library_details
+pypi_detail_fetcher
 
 # Website files
 website/
+
+# Json files
+inspect.json

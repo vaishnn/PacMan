@@ -15,11 +15,21 @@ paths:
       arrowDown: "assets/icons/fold.png"
       add: "assets/icons/add.png"
   executables:
-    library:
-      darwin: "./go_app"
-      win32: "./go_app.exe"
-      win64: "./go_app.exe"
-      linux: "./go_app"
+    loadLibrary:
+      darwin: "./load_library"
+      win32: "./load_library.exe"
+      win64: "./load_library.exe"
+      linux: "./load_library"
+    pypiDetailFetcher:
+      darwin: "./pypi_detail_fetcher"
+      win32: "./pypi_detail_fetcher.exe"
+      win64: "./pypi_detail_fetcher.exe"
+      linux: "./pypi_detail_fetcher"
+    findLocalEnv:
+      darwin: "./find_local_env"
+      win32: "./find_local_env.exe"
+      win64: "./find_local_env.exe"
+      linux: "./find_local_env"
   search:
     darwin:
       - "/Library/Frameworks/Python.framework/Versions"

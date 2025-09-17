@@ -273,6 +273,11 @@ stylesheet:
       font-size: {{ ui.dimensions.fontSize.default }};
     }
 
+    #initializeEnvironmentButton:hover {
+      transition: background-color 0.3s ease;
+      transform: rotate(30deg);
+    }
+
   initScreen: |
     #container {
       background-color: {{ ui.colors.background.main }};
