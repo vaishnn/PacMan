@@ -16,20 +16,15 @@ paths:
       add: "assets/icons/add.png"
   executables:
     loadLibrary:
-      darwin: "./load_library"
-      win32: "./load_library.exe"
-      win64: "./load_library.exe"
-      linux: "./load_library"
+      darwin: "./bin/darwin_arm64/library-loader"
+      win: "./bin/library-loader.exe" # change this to the correct path
     pypiDetailFetcher:
-      darwin: "./pypi_detail_fetcher"
-      win32: "./pypi_detail_fetcher.exe"
-      win64: "./pypi_detail_fetcher.exe"
-      linux: "./pypi_detail_fetcher"
+      darwin: "./bin/darwin_arm64/pypi-fetcher"
+      win: "./bin/pypi-fetcher.exe" # change this to the correct path
     findLocalEnv:
-      darwin: "./find_local_env"
-      win32: "./find_local_env.exe"
-      win64: "./find_local_env.exe"
-      linux: "./find_local_env"
+      darwin: "./bin/darwin_arm64/env-finder"
+      win: "./bin/env-finder.exe" # change this to the correct path
+
   search:
     darwin:
       - "/Library/Frameworks/Python.framework/Versions"
