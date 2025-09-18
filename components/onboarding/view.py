@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QComboBox, QFileDialog, QPushButton, QSizePolicy
 )
 from PyQt6.QtCore import  Qt, pyqtSignal, QEasingCurve, QPropertyAnimation
-from components.library.core import LibraryThreads
+from ..library.core import LibraryThreads
 from .threads import PythonInterpreters
 from ..widgets.helper_classes import LineEdit, Toast
 from .utils import loading_virtual_env
@@ -32,6 +32,7 @@ class OnboardingPage(QWidget):
     """
     location_selected = pyqtSignal(str, str, list)
     find_env_in_pc = pyqtSignal()
+    release_python_interpreters = pyqtSignal(dict)
     switch_to_main = pyqtSignal()
     def __init__(self, config, parent):
         super().__init__(parent)
@@ -41,6 +42,8 @@ class OnboardingPage(QWidget):
         self.setStyleSheet(config.get('stylesheet', {}).get('main',''))
         self.project_location = ""
         self.animation_running = False
+        self.python_interpreters = None
+        self.found_python_interpreters = {}
         self.current_env = []
 
         self.worker = LibraryThreads()
@@ -135,8 +138,6 @@ class OnboardingPage(QWidget):
         layout = QVBoxLayout(self.select_env)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.python_interpreters = PythonInterpreters()
-
         self.found_virtual_envs_label = QLabel("Searching for existing virtual environments...")
         self.found_virtual_envs_label.setFixedHeight(30)
         self.drop_down_for_selecting_virtual_env = QComboBox()
@@ -162,9 +163,6 @@ class OnboardingPage(QWidget):
         self.create_virtual_env_button.setObjectName("createVirtualEnvButton")
 
         # self.find_env.finished.connect(self._display_env)
-        self.python_interpreters.release_details.connect(
-            self._display_python_interpreters
-        )
         layout.addWidget(self.found_virtual_envs_label)
         layout.addWidget(self.drop_down_for_selecting_virtual_env)
         layout.addWidget(self.use_selecting_virtual_env_button)
@@ -249,7 +247,18 @@ class OnboardingPage(QWidget):
             )
             self.project_location = directory
             self.browse_label.setText(f"Selected: {directory}")
-            self.python_interpreters.get_interpreters()
+            self.python_interpreters = PythonInterpreters()
+
+            if self.found_python_interpreters == {}:
+                self.python_interpreters.finished.connect(
+                    self._display_python_interpreters
+                )
+                self.python_interpreters.finished.connect(self.release_python_interpreters)
+                self.python_interpreters.finished.connect(self.python_interpreters.deleteLater)
+                self.python_interpreters.start()
+            else:
+                self._display_python_interpreters(self.found_python_interpreters)
+
             self.find_env_in_pc.emit()
 
             self.animation_running = True
@@ -289,6 +298,7 @@ class OnboardingPage(QWidget):
             self.use_selecting_virtual_env_button.setVisible(False)
 
     def _display_python_interpreters(self, interpreters: dict):
+        self.found_python_interpreters = interpreters
         self.drop_down_for_creating_python_env.clear()
         if len(interpreters) > 1:
             self.create_virtual_env_information.setText(f"found {len(interpreters)} global python interpreters")

@@ -203,6 +203,9 @@ class Library(QWidget):
 
         return container
 
+    def set_python_interpreters(self, interpreters: dict):
+        self.python_interpreters = interpreters
+
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
         self.show_env_box.connect(self._expand_change_env)

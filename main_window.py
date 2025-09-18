@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QFrame, QListWidget, QMainWindow, QHBoxLayout,
+    QFrame, QListWidget, QMainWindow, QHBoxLayout, QPushButton,
     QVBoxLayout, QWidget, QLabel, QStackedWidget,
 )
 from PyQt6.QtCore import  Qt, pyqtSignal
@@ -13,9 +13,7 @@ from components.installer.utils import save_file
 from components.analysis.core import Analysis
 from components.settings.core import Setting
 from helpers.state_manager import save_state
-
-
-
+from components.onboarding.threads import PythonInterpreters
 
 class PacMan(QMainWindow):
     """
@@ -38,10 +36,11 @@ class PacMan(QMainWindow):
             config (dict, optional): A dictionary containing the application's configuration. Defaults to {}.
         """
         super().__init__()
-
+        self.python_interpreters = {}
         self.setMouseTracking(True)
         self.config = config
         self._extra_content()
+        self.python_thread_worker = None
 
         # State variables
         self.state_variables = state_variables
@@ -68,6 +67,7 @@ class PacMan(QMainWindow):
         self.onboarding_widget = OnboardingPage(self.config, self)
         self.onboarding_widget.location_selected.connect(self._set_existing_python_env)
         self.onboarding_widget.switch_to_main.connect(self.switchContent)
+        self.onboarding_widget.release_python_interpreters.connect(self._set_python_interpreters)
 
         self.main_stack = QStackedWidget(self)
         self.main_stack.addWidget(self.onboarding_widget)
@@ -85,6 +85,11 @@ class PacMan(QMainWindow):
                 self.state_variables.get('loaded_virtual_envs', [])
             )
 
+
+    def _set_python_interpreters(self, python_interpreters):
+        self.python_interpreters = python_interpreters
+        print(python_interpreters)
+        self.libraries.set_python_interpreters(python_interpreters)
 
     def _set_state_variables(self, project_folder, virtual_env_name, virtual_env_list):
         """
@@ -108,6 +113,12 @@ class PacMan(QMainWindow):
             virtual_envs (list): A list of virtual environments.
         """
         self.main_stack.setCurrentWidget(self.container)
+        if self.python_interpreters == {}:
+            self.python_thread_worker = PythonInterpreters()
+            self.python_thread_worker.finished.connect(self._set_python_interpreters)
+            self.python_thread_worker.finished.connect(self.python_thread_worker.deleteLater)
+            self.python_thread_worker.start()
+
         self.libraries.selection_location_from_main(curr_dir, current_venv, virtual_envs)
 
     def _setup_main_app_ui(self):
@@ -170,6 +181,13 @@ class PacMan(QMainWindow):
         if self._installer_populated:
             self._set_status_installer()
 
+    def _page_for_creating_virtual_env(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.addWidget(QLabel("Create Virtual Environment"))
+        layout.addWidget(QPushButton("Create"))
+        layout.addWidget(QPushButton("Cancel"))
+        return container
 
     def switchContent(self):
         """
@@ -231,6 +249,12 @@ class PacMan(QMainWindow):
         return sideBar, navList
 
     def _saving_screen(self):
+        """
+        Initializes the saving screen widget.
+
+        This screen is displayed when the application is saving its state or other data.
+        It is a frameless, application-modal widget with a "Saving..." label centered on it.
+        """
         self.saving_page = QWidget()
         self.saving_page.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.saving_page.setWindowModality(Qt.WindowModality.ApplicationModal)

@@ -1,71 +1,86 @@
-# PacMan - Python Package Manager
+# PacMan 📦
 
-![PacMan Screenshot](website/Images/PacMan.png)
+PacMan is a modern, high-performance desktop application for managing Python virtual environments and their packages. Built with a sleek PyQt6 user interface and a powerful Go backend for heavy lifting, PacMan aims to provide a fast and intuitive development experience.
 
-PacMan is a graphical desktop application for managing Python packages and virtual environments, built with PyQt6. It provides a user-friendly interface to simplify the process of installing, uninstalling, and managing Python libraries for your projects.
+![PacMan Demo](assets/readme/pacman-demo.gif)
 
-## Features
 
-*   **Virtual Environment Management**: Automatically detects and lets you select a Python virtual environment for your project.
-*   **List Installed Packages**: View a list of all packages installed in the selected environment.
-*   **Search PyPI**: Search for available packages on the Python Package Index (PyPI).
-*   **Install & Uninstall Packages**: Easily install packages from PyPI or uninstall existing ones.
-*   **Dependency Tree**: Visualize the dependency tree of your installed packages.
-*   **Onboarding**: A simple setup process for new users to configure their project environment.
-*   **Custom Theming**: The application is styled with a clean, dark theme.
+## ✨ Features
 
-## Getting Started
+* **Modern UI**: A sleek, frameless user interface built with PyQt6 and styled with a flexible YAML-based theming engine.
+* **Virtual Environment Management**: Effortlessly discover existing virtual environments within a project directory or create new ones from any detected Python interpreter on your system.
+* **Package Manager**: View, search, install, and uninstall packages from PyPI within the context of your selected environment.
+* **High-Performance Backend**: Leverages helper tools written in Go to perform concurrent, blocking operations (like discovering environments and fetching package data) without freezing the UI.
+* **Rich Package Details**: Hover over any installed library to see a detailed tooltip with its summary, author, dependencies, license, and more.
+* **Dependency Analysis**: Includes tools for visualizing the dependency tree of your projects.
 
-### Prerequisites
+---
 
-*   Python 3.x
+## ⚙️ Tech Stack
 
-### Installation
+* **Frontend & UI**: Python / PyQt6
+* **Backend Helpers**: Go
+* **Configuration**: YAML
+* **Styling**: QSS (Qt Style Sheets) with YAML templating
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/PacMan.git
-    cd PacMan
-    ```
+---
 
-2.  **Create and activate a virtual environment (Recommended):**
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # On Windows use `.venv\Scripts\activate`
-    ```
+## 📂 Project Structure
 
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+The project is organized into distinct modules for clarity and maintainability. This separation of concerns makes it easier to navigate, debug, and contribute to the codebase.
 
-### Running the Application
+```plaintext
+PacMan/
+├── main.py                 # Application entry point
+├── main_window.py          # Main application shell (QMainWindow)
+|
+├── assets/                 # Icons, fonts, and other static resources
+├── bin/                    # Compiled Go executables (platform-specific)
+├── components/             # Self-contained UI features (installer, library, etc.)
+├── config/                 # YAML configuration files for UI and paths
+├── go-tools/               # Source code for the Go helper programs
+├── helpers/                # Python helper modules (state management, etc.)
+|
+├── build.sh                # Script to build the Go executables
+└── requirements.txt        # Python package dependencies
+```
+## 🚀 Getting Started
 
-Once the dependencies are installed, you can run the application with:
+Follow these steps to get a local copy up and running.
+Prerequisites
+- Python 3.8+
+- Go 1.25+
+- Git
+
+## Installation & Setup
+
+1. Clone the repository
+```bash
+git clone https://github.com/vaishnn/PacMan.git
+cd PacMan
+```
+2. Install Python dependencies
+- It's recommended to do this in a virtual environment.
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+pip install -r requirements.txt
+```
+3. Build the Go helper executables
+- The build script will compile the Go programs and place them in the bin/ directory.
+```bash
+# Make the script executable (only need to do this once)
+chmod +x build.sh
+
+# Run the build script
+./build.sh
+```
+4. Run the application
 ```bash
 python main.py
 ```
-
-## Project Structure
-
-The project is organized into several modules to separate concerns:
-
-```
-├── assets/               # Icons, fonts, and other static assets
-├── config/               # YAML configuration files for the application
-├── dependency_tree/      # Logic for visualizing the package dependency tree
-├── helpers/              # Helper functions and classes (e.g., state management)
-├── installer/            # UI and logic for installing new packages
-├── library/              # UI and logic for listing installed packages
-├── onboarding/           # Widgets for the first-time user setup
-├── ui/                   # Shared UI components (e.g., the control bar)
-├── workers/              # Background threads for long-running tasks
-├── main.py               # Main application entry point
-├── pacman.py             # The main application window and layout
-├── requirements.txt      # A list of python dependencies for this project
-└── roadmap.md            # Detailed project roadmap
-```
-
-## License
+### 🤝 Contributing
+Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+### 📄 License
 
 This project is licensed under the MIT License.

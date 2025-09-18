@@ -3,6 +3,13 @@ from PyQt6.QtGui import QKeyEvent, QPainter
 from PyQt6.QtWidgets import QComboBox, QLabel, QStyleOptionComboBox, QStyledItemDelegate, QTextEdit, QWidget
 
 class LineEdit(QTextEdit):
+    """
+    A custom QTextEdit widget that filters key press events.
+
+    This widget only allows alphanumeric characters, periods, and a predefined
+    set of control keys (Backspace, Delete, Left, Up, Right, Down, Home, End,
+    Enter, Tab, Backtab, Return) to be processed. All other key presses are ignored.
+    """
     def keyPressEvent(self, event: QKeyEvent): #type: ignore
         text = event.text()
         if text.isalpha() or text.isdigit() or text == "." or event.key() in (
@@ -22,6 +29,13 @@ class LineEdit(QTextEdit):
             super().keyPressEvent(event)
 
 class Toast(QWidget):
+    """
+    A temporary, non-blocking notification widget ("toast").
+
+    This widget displays a message for a specified duration and then automatically
+    closes. It is designed to be frameless, translucent, and appears at the
+    bottom center of its parent widget.
+    """
     def __init__(self, parent, message, duration=2000):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.ToolTip)
