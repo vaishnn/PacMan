@@ -6,16 +6,15 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QLineEdit, QMessageBox,
                              QSizePolicy)
 from PyQt6.QtCore import (QEasingCurve, QPropertyAnimation, QTimer, Qt,
                         pyqtSignal, QSize, pyqtSlot)
-
-# Internal project imports
+from ..widgets.helper_classes import LineEdit
+from ..onboarding.utils import commit_action
 from ..onboarding.utils import loading_virtual_env
 from ..widgets.tooltip import InteractiveToolTip
 from ..widgets.buttons import RotatingPushButton
-
-# New relative imports from our refactored files
 from .threads import LibraryThreads, Uninstall
 from .utils import rank_query, human_readable_size, format_tooltip_html
 from copy import deepcopy
+from helpers.utils import resource_path
 
 
 class Library(QWidget):
@@ -51,11 +50,14 @@ class Library(QWidget):
         self.current_loaded_virtual_envs_list = []
         self.current_virtual_env = ""
         self.python_exec_path = ""
+        self.env_creator :LibraryThreads
+        self.index_for_stacked_pages = {}
         self.already_inside_project = False
         self.current_dir = ""
         self.uninstall_manager = None
 
     def _worker_thread(self):
+        """Initializes worker threads for fetching library details and virtual environment lists."""
         self.worker = LibraryThreads()
         self.worker.details.connect(self._handle_list_libraries)
         self.worker.virtual_envs.connect(self._venv_loaded_connected)
@@ -117,10 +119,16 @@ class Library(QWidget):
         parent_layout.addLayout(layout)
 
     def _create_new_virtual_env(self):
-        print(10)
+        if self.index_for_stacked_pages != {}:
+            self.stacked_library_with_loading_screen.setCurrentIndex(
+                self.index_for_stacked_pages['create_new_env']
+            )
 
     def _on_env_inventory_in_same_directory(self):
-        self.stacked_library_with_loading_screen.setCurrentIndex(1)
+        """Handles the selection of a different virtual environment from the QComboBox."""
+        self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['loading_page']
+        )
         current_location = self.current_dir
         current_virtual_env = self.change_env_in_same_directory.currentText()
         self._change_virtual_env(current_location, current_virtual_env)
@@ -146,8 +154,75 @@ class Library(QWidget):
         )
         self.animation.start()
 
-    def _change_virtual_env(self, directory, venv_name):
+    def _page_for_creating_new_virtual_env(self):
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        name_of_venv = LineEdit()
+        name_of_venv.setFixedHeight(38)
+        name_of_venv.setContentsMargins(0, 0, 0, 0)
+        name_of_venv.setPlaceholderText("Type name of your virtual environment, default: venv")
+        name_of_venv.setObjectName("customVirtualName")
 
+
+        self.drop_down_for_creating_python_env = QComboBox()
+        create_virtual_env_button = QPushButton("Create New Environment")
+        create_virtual_env_button.setObjectName("createVirtualEnvButton")
+
+        create_virtual_env_button.clicked.connect(lambda: self._create_virtual_env(name_of_venv.toPlainText().strip()))
+
+        second_layout = QHBoxLayout()
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setObjectName("cancelEnvironmentCreatorButton")
+        cancel_button.clicked.connect(lambda: self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['library_list']
+        ))
+
+
+        second_layout.addSpacing(10)
+        second_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        second_layout.addWidget(cancel_button)
+
+        layout.addWidget(name_of_venv)
+        layout.addWidget(self.drop_down_for_creating_python_env)
+        layout.addWidget(create_virtual_env_button)
+        layout.addLayout(second_layout)
+
+
+
+        container.setLayout(layout)
+        return container
+
+
+    def _create_virtual_env(self, text):
+        venv_names = [cur_venv['venv_name'] for cur_venv in self.current_loaded_virtual_envs_list]
+        if text == "":
+            text = "venv"
+
+        if text in venv_names:
+            commit_action(self, "Same name environment already exist")
+        else:
+            self.stacked_library_with_loading_screen.setCurrentIndex(self.index_for_stacked_pages['loading_page'])
+            self.env_creator = LibraryThreads()
+            self.env_creator.emit_create_virtual_env(
+                self.current_dir,
+                self.drop_down_for_creating_python_env.currentText().split(":")[1].strip(),
+                text,
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin'))
+            )
+            self.env_creator.new_virtual_env.connect(self._on_creating_new_virtual_env)
+
+    def _on_creating_new_virtual_env(self, success_code, directory, virtual_env_name, venvs):
+        if success_code == 1:
+            self.selection_location_from_main(directory, virtual_env_name, venvs)
+        elif success_code == 0:
+            self.stacked_library_with_loading_screen.setCurrentIndex(self.index_for_stacked_pages['loading_page'])
+        else:
+            commit_action(self, "Unknown error")
+
+
+    def _change_virtual_env(self, directory, venv_name):
+        """Changes the currently active virtual environment and triggers a refresh of the library list."""
         if not directory or not venv_name:
             return
         self.current_state.emit(directory, venv_name, self.current_loaded_virtual_envs_list)
@@ -155,7 +230,7 @@ class Library(QWidget):
         self._set_python_exec_path([env['python_path'] for env in self.current_loaded_virtual_envs_list if env['venv_name'] == venv_name][0])
         self.worker.emit_signal_for_details(
             self.current_dir,
-            self.config.get('paths', {}).get('executables', {}).get('loadLibrary', {}).get('darwin', "./load_library"),
+            resource_path(self.config.get('paths', {}).get('executables', {}).get('load_library', {}).get('darwin')),
             self.current_virtual_env
         )
 
@@ -179,8 +254,17 @@ class Library(QWidget):
         self.stacked_library_with_loading_screen.addWidget(self.library_list)
         self.loading_page = loading_virtual_env()
         self.stacked_library_with_loading_screen.addWidget(self.loading_page)
-        self._page_no_env = self._page_no_virtual_env_found()
-        self.stacked_library_with_loading_screen.addWidget(self._page_no_env)
+        self.page_no_env = self._page_no_virtual_env_found()
+        self.stacked_library_with_loading_screen.addWidget(self.page_no_env)
+        self.create_new_env = self._page_for_creating_new_virtual_env()
+        self.stacked_library_with_loading_screen.addWidget(self.create_new_env)
+
+        self.index_for_stacked_pages['library_list'] = 0
+        self.index_for_stacked_pages['loading_page'] = 1
+        self.index_for_stacked_pages['page_no_env'] = 2
+        self.index_for_stacked_pages['create_new_env'] = 3
+
+
 
         self.library_list.setObjectName("libraryList")
         library_layout.addWidget(self.stacked_library_with_loading_screen)
@@ -202,6 +286,12 @@ class Library(QWidget):
         container.setLayout(layout)
 
         return container
+
+    def set_python_interpreters(self, interpreters: dict):
+        self.python_interpreters = interpreters
+        if interpreters != {}:
+            for interpreter_path, python_version in interpreters.items():
+                self.drop_down_for_creating_python_env.addItem(f"{python_version}: {interpreter_path}")
 
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
@@ -230,7 +320,9 @@ class Library(QWidget):
                     if current_venv == env['venv_name']:
                         current_venv = self.change_env_in_same_directory.currentText()
 
-            self.stacked_library_with_loading_screen.setCurrentIndex(1)
+            self.stacked_library_with_loading_screen.setCurrentIndex(
+                self.index_for_stacked_pages['loading_page']
+            )
             self.current_loaded_virtual_envs_list = virtual_env_names
             self._expand_change_env() # Animate the box
             self.change_env_in_same_directory.setCurrentText(self.current_virtual_env)
@@ -255,20 +347,29 @@ class Library(QWidget):
             self.label_location.setText(directory_path)
             self.worker.emit_signal_for_virtual_envs(
                 directory_path,
-                self.config.get('paths', {}).get('executables', {}).get('findLocalEnv', {}).get('darwin', "./find_local_env"),
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin')),
             )
 
     def _venv_loaded_connected(self, venv_list):
         if isinstance(venv_list, list):
             if venv_list == []:
                 self.change_env_in_same_directory.clear()
+                self.current_loaded_virtual_envs_list = []
+                self.current_virtual_env = None
                 self.change_env_in_same_directory.setPlaceholderText("--")
-                self.stacked_library_with_loading_screen.setCurrentIndex(2)
+                self.stacked_library_with_loading_screen.setCurrentIndex(
+                    self.index_for_stacked_pages['page_no_env']
+                )
                 return
             self.current_virtual_env = venv_list[0].get('venv_name')
             self.venv_loaded.emit( self.current_dir, venv_list[0].get('venv_name'), venv_list)
 
     def selection_location_from_main(self, directoryPath, venv_name, virtual_envs):
+
+        if hasattr(self, 'env_creator'):
+            self.env_creator.quit()
+
+
         self.current_dir = directoryPath
         self.label_location.setText(f"{directoryPath}")
         self.current_virtual_env = venv_name
@@ -332,7 +433,7 @@ class Library(QWidget):
             uninstall_button.setFixedSize(30, 30)
             uninstall_button.setObjectName("deleteButtonFromLibraryListWidget")
             uninstall_button.setIcon(QIcon(
-                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall"),
+                resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall")),
             ))
             uninstall_button.setIconSize(QSize(22, 22))
 
@@ -379,7 +480,9 @@ class Library(QWidget):
             uninstall_button.clicked.connect(
                 lambda checked=False, packageName=item['name'], uninstall_button=uninstall_button: self.start_library_uninstaller(packageName, uninstall_button))
 
-        self.stacked_library_with_loading_screen.setCurrentIndex(0)
+        self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['library_list']
+        )
 
     def start_library_uninstaller(self, packageName, uninstall_button: QPushButton):
         reply = QMessageBox.warning(
@@ -392,7 +495,7 @@ class Library(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             if packageName in self.item_map:
                 uninstall_button.setIcon(
-                    QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', ''))
+                    QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', '')))
                 )
             self.uninstall_manager = Uninstall(self.python_exec_path, packageName, uninstall_button)
             self.uninstall_manager.finished.connect(self.on_uninstall_finished)
@@ -412,12 +515,12 @@ class Library(QWidget):
                 self.library_list.takeItem(row)
         if success:
             uninstall_button.setIcon(
-                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', ''))
+                QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', '')))
             )
             QTimer.singleShot(2000, lambda: _pop_item_in_sometime(self))
         else:
             uninstall_button.setIcon(
-                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', ''))
+                QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', '')))
             )
             uninstall_button.setEnabled(False)
         self.uninstall_manager = None

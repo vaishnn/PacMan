@@ -111,3 +111,7 @@ website/
 
 # Json files
 inspect.json
+
+bin*
+dist*
+setup*

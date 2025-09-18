@@ -19,6 +19,13 @@ class ControlBar(QWidget):
         self._mouse_press_pos = None
 
     def _layout(self):
+        """
+        Sets up the layout for the ControlBar widget.
+
+        This method initializes the horizontal layout, configures its alignment,
+        margins, and spacing, sets up the control buttons (close, minimize, maximize),
+        and adds the application name label.
+        """
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         layout.setContentsMargins(3, 0, 5, 0)
@@ -43,7 +50,10 @@ class ControlBar(QWidget):
         self.setLayout(layout)
 
     def _setup_buttons(self):
-
+        """
+        Initializes and configures the control buttons (close, minimize, maximize)
+        for the ControlBar widget.
+        """
         # Close Button
         self.close_button = HoverIconButton(icon_path="./assets/icons/close.svg")
         self.close_button.setObjectName("closeButton")

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"io/fs"
-	"log"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -96,7 +95,7 @@ func get_path_size(paths []string) int64 {
 		})
 
 		if err != nil {
-			log.Printf("Error calculating size for %s: %v\n", path, err)
+			slog.Error("Error calculating size for", "path", path, "error", err)
 		}
 	}
 	return total_size

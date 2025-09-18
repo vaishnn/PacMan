@@ -28,16 +28,14 @@ class GettingInstallerLibraryDetails(QThread):
             result = subprocess.run([self.go_executable, *self.list_of_libraries], capture_output=True, text=True)
             if result.stderr:
                 print(result.stderr)
+            try:
+                data = json.loads(result.stdout)
+                if isinstance(data, dict):
+                    self.finished.emit(data)
+            except Exception as e:
                 self.finished.emit({})
-            else:
-                try:
-                    data = json.loads(result.stdout)
-                    if isinstance(data, dict):
-                        self.finished.emit(data)
-                except Exception as e:
-                    self.finished.emit({})
-                    print(e)
-                    print(result.stdout)
+                print(e)
+                print(result.stdout)
         else:
             self.finished.emit({})
 
@@ -68,7 +66,8 @@ class InstallerLibraries(QThread):
             )
 
             print("---STDERR---")
-            print(result.stderr)
+            if result.stderr:
+                print(result.stderr)
 
             if result.returncode == 0:
                 self.finished.emit(1, self.model_index)
@@ -81,7 +80,7 @@ class InstallerLibraries(QThread):
 
 class PyPiRunner(QObject):
     """This class is for fetching libraries for PyPI"""
-    listOfLibraries = pyqtSignal(list)
+    list_of_libraries = pyqtSignal(list)
     def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
         super().__init__()
         self.thread_runner = QThread()
@@ -90,7 +89,7 @@ class PyPiRunner(QObject):
 
         self.worker.finished.connect(self.thread_runner.quit)
         self.thread_runner.started.connect(self.worker.run)
-        self.worker.listOfLibraries.connect(self.listOfLibraries)
+        self.worker.list_of_libraries.connect(self.list_of_libraries)
 
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread_runner.finished.connect(self.thread_runner.deleteLater)
@@ -101,7 +100,7 @@ class PyPiRunner(QObject):
 
 class PyPiWorker(QObject):
     """Worker for fetching libraries from PyPI"""
-    listOfLibraries = pyqtSignal(list)
+    list_of_libraries = pyqtSignal(list)
     finished = pyqtSignal()
     def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
         super().__init__()
@@ -109,7 +108,6 @@ class PyPiWorker(QObject):
         self.fileName = fileName
 
     def run(self):
-        self.libraryList = load_data(self.appName, self.fileName)
-        librarylist = self.libraryList
-        self.listOfLibraries.emit(librarylist)
+        librarylist = load_data(self.appName, self.fileName)
+        self.list_of_libraries.emit(librarylist)
         self.finished.emit()

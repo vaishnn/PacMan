@@ -7,6 +7,8 @@ from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtGui import QMovie
 from PyQt6.QtWidgets import QFrame, QLabel, QVBoxLayout
 
+from components.widgets.helper_classes import Toast
+
 def where_python_location(searching_paths: list[str] = [
     "/Library/Frameworks/Python.framework/Versions",
     "/opt/homebrew/bin",
@@ -75,6 +77,13 @@ def loading_virtual_env():
     layout.addWidget(spinner_label)
     movie.start()
     return container
+
+def commit_action(parent, message: str):
+    """
+    Displays a toast message to the user.
+    """
+    toast = Toast(parent, message=message)
+    toast.show()
 
 if __name__ == "__main__":
     pass

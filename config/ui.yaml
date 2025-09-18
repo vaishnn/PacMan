@@ -7,7 +7,7 @@ ui:
       contentsMargin: [0, 0, 0, 0]
       spacing: 0
     sideBar:
-      minWidth: 100
+      minWidth: 200
       maxWidth: 200
       contentMargins: [10, 10, 10, 10]
       spacing: 15
@@ -64,12 +64,13 @@ ui:
       muted: "#AAAAAA"
       bright: "#FFFFFF"
     border:
+      lighter: "#F5F5F5"
       light: "#555555"
       dark: "#3C3C3C"
       # dark: transparent
     button:
-      primary: "#007ACC"
-      primaryHover: "#005C99"
+      primary: "#005C99"
+      primaryHover: "#007ACC"
       primaryPressed: "#004C80"
       install: "#E5E5E5"
     trafficLight:
@@ -219,17 +220,23 @@ stylesheet:
       min-width: 80px;
       font-size: {{ ui.dimensions.fontSize.medium }};
     }
-    QMessageBox QPushButton:hover, #useSelectingVirtualEnvButton:hover, #createVirtualEnvButton:hover { background-color: {{ ui.colors.button.primaryHover }}; }
-    QMessageBox QPushButton:pressed, #useSelectingVirtualEnvButton:pressed, #createVirtualEnvButton:pressed { background-color: {{ ui.colors.button.primaryPressed }}; }
+    QMessageBox QPushButton:hover, #useSelectingVirtualEnvButton:hover, #createVirtualEnvButton:hover {
+      background-color: {{ ui.colors.button.primaryHover }};
+    }
+    QMessageBox QPushButton:pressed, #useSelectingVirtualEnvButton:pressed, #createVirtualEnvButton:pressed {
+      background-color: {{ ui.colors.button.primaryPressed }};
+    }
     #browseLabel, #selectEnv {
       background-color: {{ ui.colors.background.content }};
+      border: 1px solid {{ ui.colors.border.light }};
+
       border-radius: {{ ui.dimensions.borderRadius.medium }};
       color: {{ ui.colors.text.normal }};
     }
     #onboardingWidget #OnboardingWidget QLineEdit, QTextEdit {
-      background-color: {{ ui.colors.background.inputSecondary }};
+      background-color: {{ ui.colors.background.sidebar }};
       color: {{ ui.colors.text.normal }};
-      border-radius: {{ ui.dimensions.borderRadius.small }};
+      border-radius: {{ ui.dimensions.borderRadius.medium }};
       padding: {{ ui.dimensions.padding.small }};
     }
     QComboBox {

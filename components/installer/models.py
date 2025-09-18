@@ -56,21 +56,21 @@ class LibraryListModel(QAbstractListModel):
 
     def deleteUpdatedData(self, indexes):
         for idx, item in indexes.items():
-            self._data.pop(idx)
+            item_to_remove = [index for index, data in enumerate(self._data) if data['name'] == item]
+            self._data.pop(item_to_remove[0])
             self.remove_item.emit(item)
             model_index = self.index(idx, 0, QModelIndex())
             self.dataChanged.emit(model_index, model_index)
-            continue
+
     def updateData(self, data_dict: dict):
         # When the API has emitted some data related to the library
-        _data = self._data.copy()
         indexes_to_remove = {}
         for _, (item, item_data) in enumerate(data_dict.items()):
             index_number = self.name_to_row.get(item, -1)
             if index_number == -1:
                 continue
             tootlip = format_pypi_tooltip_html(item_data, 'figtree')
-            if item_data.get('info', {}).get('summary', "UNKNOWN") == "UNKNOWN":
+            if item_data.get('info', {}).get('summary') == "":
                 indexes_to_remove[index_number] =  item
             self._data[index_number].update({'description': tootlip})
             self._data[index_number].update({'version': item_data['info']['version']})

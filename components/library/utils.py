@@ -19,11 +19,11 @@ def rank_query(dataList, query):
         item for item in dataList
         if lowerQuery in item['name'].lower()
     ]
-    sortedMatches = sorted(
+    sorted_matches = sorted(
         matches,
         key=lambda item: item['name'].lower().find(lowerQuery)
     )
-    return sortedMatches
+    return sorted_matches
 
 def human_readable_size(size: int) -> str:
     """
