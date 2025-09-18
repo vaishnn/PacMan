@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication, QSplashScreen
 from PyQt6.QtCore import Qt
 
 from main_window import PacMan
-from config.loader import load_config, loadFont
+from config.loader import load_config, load_font
 from helpers.state_manager import load_state
 
 if __name__ == "__main__":
@@ -23,10 +23,10 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(config.get("paths", {}).get("assets", {}).get("images", {}).get("appLogo", "")))
     app.applicationVersion = config.get("app", {}).get("version", "")
 
-    fontPath = config.get("paths", {}).get("assets", {}).get("fonts", {}).get("main", "")
-    if fontPath:
-        fontSize = config.get("ui", {}).get("dimensions", {}).get('fontSize', {}).get('mainFont', 14)
-        app.setFont(loadFont(fontPath, fontSize))
+    font_path = config.get("paths", {}).get("assets", {}).get("fonts", {}).get("main", "")
+    if font_path:
+        font_size = config.get("ui", {}).get("dimensions", {}).get('fontSize', {}).get('mainFont', 14)
+        app.setFont(load_font(font_path, font_size))
 
     app.setStyleSheet(config.get("stylesheet", {}).get("main", ""))
 

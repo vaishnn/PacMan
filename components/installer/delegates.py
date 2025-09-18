@@ -16,9 +16,9 @@ class PyPIitemDelegate(QStyledItemDelegate):
     on the install icon to trigger an installation process.
 
     Signals:
-        installClicked (QModelIndex): Emitted when the user clicks the install icon for an item.
+        install_clicked (QModelIndex): Emitted when the user clicks the install icon for an item.
     """
-    installClicked = pyqtSignal(QModelIndex)
+    install_clicked = pyqtSignal(QModelIndex)
     def __init__(self, config: dict, parent = None):
         super().__init__(parent)
         self.config = config
@@ -42,7 +42,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
         )
         self.padding = 10
         self._hovered_index = None
-        self.roundedCornersRadius = self.config.get("ui", {}).get(
+        self.rounded_corner_radius = self.config.get("ui", {}).get(
             "window", {}).get("installer", {}).get('roundedCornerRadius', 8)
 
     def paint(self, painter: QPainter, option, index): #type: ignore
@@ -51,7 +51,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = option.rect
         path = QPainterPath()
-        path.addRoundedRect(rect.toRectF(), self.roundedCornersRadius, self.roundedCornersRadius)
+        path.addRoundedRect(rect.toRectF(), self.rounded_corner_radius, self.rounded_corner_radius)
 
         # Draw the hover effect
         if option.state & QStyle.StateFlag.State_MouseOver:
@@ -68,8 +68,8 @@ class PyPIitemDelegate(QStyledItemDelegate):
 
 
 
-        itemData = index.data(DataRole)
-        if not itemData:
+        item_data = index.data(DataRole)
+        if not item_data:
             painter.restore()
             return
 
@@ -104,41 +104,41 @@ class PyPIitemDelegate(QStyledItemDelegate):
         font.setItalic(True)
         painter.setFont(font)
 
-        versionText = itemData.get('version', "...")
+        version_text = item_data.get('version', "...")
         # painter.setPen(self.color_muted)
         painter.setPen(self.color_muted)
-        painter.drawText(version_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, versionText)
+        painter.drawText(version_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, version_text)
 
         painter.setFont(oldfont)
-        libraryName = itemData.get('name', "")
+        library_name = item_data.get('name', "")
         painter.setPen(self.text_color)
-        painter.drawText(name_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, libraryName)
+        painter.drawText(name_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, library_name)
         painter.restore()
 
-        status_install = itemData.get("status", "install")
+        status_install = item_data.get("status", "install")
         mouse_pos = option.widget.mapFromGlobal(
             option.widget.cursor().pos()) if option.widget else QPoint(-1, -1)
         is_hovering_install = install_rect.contains(mouse_pos)
 
         if status_install == "install" :
             if is_hovering_install :
-                self._drawColoredPixmap(painter, install_rect, QPixmap(
+                self._draw_coloured_pixmap(painter, install_rect, QPixmap(
                     self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
                 ), self.button_color, "#929292")
             else:
-                self._drawColoredPixmap(painter, install_rect, QPixmap(
+                self._draw_coloured_pixmap(painter, install_rect, QPixmap(
                     self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
                 ), self.button_color)
         elif status_install == "installed":
-            self._drawColoredPixmap(painter, install_rect, QPixmap(
+            self._draw_coloured_pixmap(painter, install_rect, QPixmap(
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installed", "")
             ), self.button_color)
         elif status_install == "installing":
-            self._drawColoredPixmap(painter, install_rect, QPixmap(
+            self._draw_coloured_pixmap(painter, install_rect, QPixmap(
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installing", "")
             ), self.button_color)
         elif status_install == "failed":
-            self._drawColoredPixmap(painter, install_rect, QPixmap(
+            self._draw_coloured_pixmap(painter, install_rect, QPixmap(
                 self.config.get("paths", {}).get("assets", {}).get("images", {}).get("failed", "")
             ), self.button_color)
 
@@ -168,8 +168,8 @@ class PyPIitemDelegate(QStyledItemDelegate):
             if option.widget:
                 option.widget.update(index) # type: ignore
 
-        itemData = index.data(DataRole)
-        if itemData and itemData.get("status", "install") == "install":
+        item_data = index.data(DataRole)
+        if item_data and item_data.get("status", "install") == "install":
             if event.type() == QEvent.Type.MouseButtonRelease: # type: ignore
                 padding = 10
                 button_width = 30
@@ -182,7 +182,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
 
                 if install_rect.contains(event.pos()): # type: ignore
 
-                    self.installClicked.emit(index)
+                    self.install_clicked.emit(index)
                     return True
         return super().editorEvent(event, model, option, index)
 
@@ -190,7 +190,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
         # Use of item Hint, it's more than just a hint
         return QSize(0, 55)
 
-    def _drawColoredPixmap(self, painter, rect: QRect, pixmap: QPixmap, color, bg_color = "", mask_color: QColor = QColor(Qt.GlobalColor.transparent)):
+    def _draw_coloured_pixmap(self, painter, rect: QRect, pixmap: QPixmap, color, bg_color = "", mask_color: QColor = QColor(Qt.GlobalColor.transparent)):
         """
         Draws a pixmap tinted with a specified color, optionally with a background.
         It uses the pixmap's mask to apply the color, making it appear as a colored icon.
@@ -205,7 +205,7 @@ class PyPIitemDelegate(QStyledItemDelegate):
                 rect.width() + 10,
                 rect.height() + 10
             ).toRectF(),
-            self.roundedCornersRadius, self.roundedCornersRadius
+            self.rounded_corner_radius, self.rounded_corner_radius
         )
         if bg_color != "":
             painter.fillPath(path, QColor(bg_color))

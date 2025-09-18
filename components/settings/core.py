@@ -8,8 +8,8 @@ class Setting(QWidget):
     def __init__(self):
         super().__init__()
         self.setObjectName("setting")
-        self.mainLayout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         label = QLabel("This is the setting Page")
-        self.mainLayout.addWidget(label)
-        self.setLayout(self.mainLayout)
+        self.main_layout.addWidget(label)
+        self.setLayout(self.main_layout)
         pass

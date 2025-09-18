@@ -23,6 +23,7 @@ class PacMan(QMainWindow):
 
     loaded_all_components = pyqtSignal()
     load_libraries = pyqtSignal()
+    ui_loaded = pyqtSignal()
     def __init__(
         self,
         state_variables,
@@ -51,6 +52,7 @@ class PacMan(QMainWindow):
         self.container.setObjectName("mainWindowContainer")
         self._setup_main_app_ui()
         self._onboarding_steps()
+        self._set_connections()
         self._saving = False
 
     def _extra_content(self):
@@ -65,9 +67,6 @@ class PacMan(QMainWindow):
         Initializes the onboarding steps for the application.
         """
         self.onboarding_widget = OnboardingPage(self.config, self)
-        self.onboarding_widget.location_selected.connect(self._set_existing_python_env)
-        self.onboarding_widget.switch_to_main.connect(self.switchContent)
-        self.onboarding_widget.release_python_interpreters.connect(self._set_python_interpreters)
 
         self.main_stack = QStackedWidget(self)
         self.main_stack.addWidget(self.onboarding_widget)
@@ -85,10 +84,25 @@ class PacMan(QMainWindow):
                 self.state_variables.get('loaded_virtual_envs', [])
             )
 
+    def _on_fully_loaded(self):
+        print(20)
+
+    def _set_connections(self):
+        """
+        Just for setting connection, function for simplicity and devil worship
+        """
+        self.onboarding_widget.location_selected.connect(self._set_existing_python_env)
+        self.onboarding_widget.switch_to_main.connect(self.switch_content)
+        self.onboarding_widget.release_python_interpreters.connect(self._set_python_interpreters)
+        self.libraries.current_state.connect(self._set_state_variables)
+        self.libraries.libraries_emitter.connect(self._retrieve_libraries_content)
+        self.libraries.python_exec.connect(self.installer.set_python_exec)
+        self.installer.population_finished.connect(self._set_status_installer)
+        self.installer.installed.connect(self.libraries.refetch_libraries)
+        self.ui_loaded.connect(self._on_fully_loaded)
 
     def _set_python_interpreters(self, python_interpreters):
         self.python_interpreters = python_interpreters
-        print(python_interpreters)
         self.libraries.set_python_interpreters(python_interpreters)
 
     def _set_state_variables(self, project_folder, virtual_env_name, virtual_env_list):
@@ -141,31 +155,24 @@ class PacMan(QMainWindow):
             "About": self.about
         }
         self.navLists = ["Libraries", "Installer", "Analysis", "Dependency Tree", "Settings", "About"]
-
-        self.libraries.current_state.connect(self._set_state_variables)
-        self.libraries.libraries_emitter.connect(self._retrieve_libraries_content)
-        self.libraries.python_exec.connect(self.installer.set_python_exec)
-        self.installer.populationFinished.connect(self._set_status_installer)
-        self.installer.installed.connect(self.libraries.refetch_libraries)
-
-        mainLayout = QHBoxLayout(self.container)
-        mainLayout.setContentsMargins(
+        main_layout = QHBoxLayout(self.container)
+        main_layout.setContentsMargins(
             *self.config.get("ui", {}).get('window', {}).get('mainLayout', {}).get('contentsMargin', [0, 0, 0, 0])
         )
 
-        mainLayout.setSpacing(
+        main_layout.setSpacing(
             self.config.get("ui", {}).get('window', {}).get('mainLayout', {}).get('spacing', 0)
         )
 
         # Add Side Bar
-        sideBar, self.navItems = self.sideBar()
-        self.contentStack = self.createContentArea()
+        side_bar, self.navItems = self.side_bar()
+        self.content_stack = self.create_content_area()
 
-        mainLayout.addWidget(sideBar)
-        mainLayout.addWidget(self.contentStack, 1)
+        main_layout.addWidget(side_bar)
+        main_layout.addWidget(self.content_stack, 1)
 
         self.navItems.currentRowChanged.connect(
-            self.contentStack.setCurrentIndex)
+            self.content_stack.setCurrentIndex)
 
     def _set_status_installer(self):
         self._installer_populated = True
@@ -189,7 +196,7 @@ class PacMan(QMainWindow):
         layout.addWidget(QPushButton("Cancel"))
         return container
 
-    def switchContent(self):
+    def switch_content(self):
         """
         Switches the content of the application.
         """
@@ -205,32 +212,32 @@ class PacMan(QMainWindow):
         self.setMinimumSize(*self.config.get("ui", {}).get('window', {}).get("minSize", [800, 600]))
         self.appName = self.config.get("application", {}).get("name", "")
 
-    def sideBar(self):
+    def side_bar(self):
         """
         Creates the side bar of the application.
         Returns:
             tuple: A tuple containing the side bar and the navigation items.
         """
-        sideBar = QWidget()
-        sideBar.setObjectName("sideBar")
+        side_bar = QWidget()
+        side_bar.setObjectName("sideBar")
         # sideBar.setFixedWidth(250)
-        sideBar.setMinimumWidth(
+        side_bar.setMinimumWidth(
             self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get("minWidth", 100)
         )
-        sideBar.setMaximumWidth(
+        side_bar.setMaximumWidth(
             self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get("maxWidth", 200)
         )
-        sideBarLayout = QVBoxLayout(sideBar)
-        sideBarLayout.setContentsMargins(
+        side_bar_layout = QVBoxLayout(side_bar)
+        side_bar_layout.setContentsMargins(
             *self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get('contentMargins', [10, 10, 10, 10])
         )
-        sideBarLayout.setSpacing(
+        side_bar_layout.setSpacing(
             self.config.get('ui', {}).get('window', {}).get("sideBar", {}).get('spacing', 15)
         )
         self.control_bar = ControlBar(self, self.config)
         self.control_bar.setContentsMargins(2, 2, 0, 0)
         self.control_bar.setObjectName("controlBar")
-        sideBarLayout.addWidget(self.control_bar)
+        side_bar_layout.addWidget(self.control_bar)
 
         navList = QListWidget()
         navList.setObjectName("navList")
@@ -243,10 +250,13 @@ class PacMan(QMainWindow):
             self.config.get('ui', {}).get('window', {}).get("sideBar", {}).get('navListSpacing', 3)
         )
 
-        sideBarLayout.addWidget(navList)
+        side_bar_layout.addWidget(navList)
+        return side_bar, navList
 
 
-        return sideBar, navList
+    def showEvent(self, a0):
+        self.ui_loaded.emit()
+        return super().showEvent(a0)
 
     def _saving_screen(self):
         """
@@ -269,23 +279,21 @@ class PacMan(QMainWindow):
         layout.addWidget(label)
         self.saving_page.setLayout(layout)
 
-    def createContentArea(self):
+    def create_content_area(self):
         """
         Create stack area for all the different pages (eg. libraries, installer ...)
         """
-        contentStack = QStackedWidget()
-        contentStack.setObjectName("contentStack")
+        content_stack = QStackedWidget()
+        content_stack.setObjectName("contentStack")
 
         for index, item_text in enumerate(self.navLists):
             page = QWidget()
-            pageLayout = QVBoxLayout(page)
-            pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
+            page_layout = QVBoxLayout(page)
+            page_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
             label = self.contentDict[item_text]
-            pageLayout.setAlignment(Qt.AlignmentFlag.AlignTop)
-            pageLayout.addWidget(label)
-            contentStack.addWidget(page)
-
-        return contentStack
+            page_layout.addWidget(label)
+            content_stack.addWidget(page)
+        return content_stack
 
     def closeEvent(self, a0) -> None:
         """
@@ -299,5 +307,5 @@ class PacMan(QMainWindow):
             save_state(
                 self.state_variables
             )
-            save_file(self.installer.allLibraries)
+            save_file(self.installer.all_libraries)
         super().closeEvent(a0)

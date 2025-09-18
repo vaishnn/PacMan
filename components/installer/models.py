@@ -61,9 +61,9 @@ class LibraryListModel(QAbstractListModel):
             model_index = self.index(idx, 0, QModelIndex())
             self.dataChanged.emit(model_index, model_index)
             continue
+
     def updateData(self, data_dict: dict):
         # When the API has emitted some data related to the library
-        _data = self._data.copy()
         indexes_to_remove = {}
         for _, (item, item_data) in enumerate(data_dict.items()):
             index_number = self.name_to_row.get(item, -1)

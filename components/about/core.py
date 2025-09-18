@@ -8,8 +8,8 @@ class About(QWidget):
     def __init__(self):
         super().__init__()
         self.setObjectName("about")
-        self.mainLayout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         label = QLabel("This is the about Page")
-        self.mainLayout.addWidget(label)
-        self.setLayout(self.mainLayout)
+        self.main_layout.addWidget(label)
+        self.setLayout(self.main_layout)
         pass

@@ -6,13 +6,10 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QLineEdit, QMessageBox,
                              QSizePolicy)
 from PyQt6.QtCore import (QEasingCurve, QPropertyAnimation, QTimer, Qt,
                         pyqtSignal, QSize, pyqtSlot)
-
-# Internal project imports
+from ..widgets.helper_classes import LineEdit
 from ..onboarding.utils import loading_virtual_env
 from ..widgets.tooltip import InteractiveToolTip
 from ..widgets.buttons import RotatingPushButton
-
-# New relative imports from our refactored files
 from .threads import LibraryThreads, Uninstall
 from .utils import rank_query, human_readable_size, format_tooltip_html
 from copy import deepcopy
@@ -51,11 +48,13 @@ class Library(QWidget):
         self.current_loaded_virtual_envs_list = []
         self.current_virtual_env = ""
         self.python_exec_path = ""
+        self.index_for_stacked_pages = {}
         self.already_inside_project = False
         self.current_dir = ""
         self.uninstall_manager = None
 
     def _worker_thread(self):
+        """Initializes worker threads for fetching library details and virtual environment lists."""
         self.worker = LibraryThreads()
         self.worker.details.connect(self._handle_list_libraries)
         self.worker.virtual_envs.connect(self._venv_loaded_connected)
@@ -117,10 +116,16 @@ class Library(QWidget):
         parent_layout.addLayout(layout)
 
     def _create_new_virtual_env(self):
-        print(10)
+        if self.index_for_stacked_pages != {}:
+            self.stacked_library_with_loading_screen.setCurrentIndex(
+                self.index_for_stacked_pages['create_new_env']
+            )
 
     def _on_env_inventory_in_same_directory(self):
-        self.stacked_library_with_loading_screen.setCurrentIndex(1)
+        """Handles the selection of a different virtual environment from the QComboBox."""
+        self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['loading_page']
+        )
         current_location = self.current_dir
         current_virtual_env = self.change_env_in_same_directory.currentText()
         self._change_virtual_env(current_location, current_virtual_env)
@@ -146,8 +151,50 @@ class Library(QWidget):
         )
         self.animation.start()
 
-    def _change_virtual_env(self, directory, venv_name):
+    def _page_for_creating_new_virtual_env(self):
+        container = QWidget()
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        name_of_venv = LineEdit()
+        name_of_venv.setFixedHeight(38)
+        name_of_venv.setContentsMargins(0, 0, 0, 0)
+        name_of_venv.setPlaceholderText("Type name of your virtual environment, default: venv")
+        name_of_venv.setObjectName("customVirtualName")
 
+
+        drop_down_for_creating_python_env = QComboBox()
+        create_virtual_env_button = QPushButton("Create New Environment")
+        create_virtual_env_button.setObjectName("createVirtualEnvButton")
+        second_layout = QHBoxLayout()
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setObjectName("cancelEnvironmentCreatorButton")
+        cancel_button.clicked.connect(lambda: self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['library_list']
+        ))
+
+
+        second_layout.addSpacing(10)
+        second_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        second_layout.addWidget(cancel_button)
+
+        layout.addWidget(name_of_venv)
+        layout.addWidget(drop_down_for_creating_python_env)
+        layout.addWidget(create_virtual_env_button)
+        layout.addLayout(second_layout)
+
+
+
+        container.setLayout(layout)
+        return container
+
+
+    def _create_virtual_env(self, text):
+        if text in self.current_loaded_virtual_envs_list:
+
+            pass
+
+    def _change_virtual_env(self, directory, venv_name):
+        """Changes the currently active virtual environment and triggers a refresh of the library list."""
         if not directory or not venv_name:
             return
         self.current_state.emit(directory, venv_name, self.current_loaded_virtual_envs_list)
@@ -179,8 +226,17 @@ class Library(QWidget):
         self.stacked_library_with_loading_screen.addWidget(self.library_list)
         self.loading_page = loading_virtual_env()
         self.stacked_library_with_loading_screen.addWidget(self.loading_page)
-        self._page_no_env = self._page_no_virtual_env_found()
-        self.stacked_library_with_loading_screen.addWidget(self._page_no_env)
+        self.page_no_env = self._page_no_virtual_env_found()
+        self.stacked_library_with_loading_screen.addWidget(self.page_no_env)
+        self.create_new_env = self._page_for_creating_new_virtual_env()
+        self.stacked_library_with_loading_screen.addWidget(self.create_new_env)
+
+        self.index_for_stacked_pages['library_list'] = 0
+        self.index_for_stacked_pages['loading_page'] = 1
+        self.index_for_stacked_pages['page_no_env'] = 2
+        self.index_for_stacked_pages['create_new_env'] = 3
+
+
 
         self.library_list.setObjectName("libraryList")
         library_layout.addWidget(self.stacked_library_with_loading_screen)
@@ -233,7 +289,9 @@ class Library(QWidget):
                     if current_venv == env['venv_name']:
                         current_venv = self.change_env_in_same_directory.currentText()
 
-            self.stacked_library_with_loading_screen.setCurrentIndex(1)
+            self.stacked_library_with_loading_screen.setCurrentIndex(
+                self.index_for_stacked_pages['loading_page']
+            )
             self.current_loaded_virtual_envs_list = virtual_env_names
             self._expand_change_env() # Animate the box
             self.change_env_in_same_directory.setCurrentText(self.current_virtual_env)
@@ -266,7 +324,9 @@ class Library(QWidget):
             if venv_list == []:
                 self.change_env_in_same_directory.clear()
                 self.change_env_in_same_directory.setPlaceholderText("--")
-                self.stacked_library_with_loading_screen.setCurrentIndex(2)
+                self.stacked_library_with_loading_screen.setCurrentIndex(
+                    self.index_for_stacked_pages['loading_page']
+                )
                 return
             self.current_virtual_env = venv_list[0].get('venv_name')
             self.venv_loaded.emit( self.current_dir, venv_list[0].get('venv_name'), venv_list)
@@ -382,7 +442,9 @@ class Library(QWidget):
             uninstall_button.clicked.connect(
                 lambda checked=False, packageName=item['name'], uninstall_button=uninstall_button: self.start_library_uninstaller(packageName, uninstall_button))
 
-        self.stacked_library_with_loading_screen.setCurrentIndex(0)
+        self.stacked_library_with_loading_screen.setCurrentIndex(
+            self.index_for_stacked_pages['library_list']
+        )
 
     def start_library_uninstaller(self, packageName, uninstall_button: QPushButton):
         reply = QMessageBox.warning(

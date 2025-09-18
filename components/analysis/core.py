@@ -8,8 +8,8 @@ class Analysis(QWidget):
     def __init__(self):
         super().__init__()
         self.setObjectName("analysis")
-        self.mainLayout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         self.label = QLabel("This is the analysis Page")
-        self.mainLayout.addWidget(self.label)
-        self.setLayout(self.mainLayout)
+        self.main_layout.addWidget(self.label)
+        self.setLayout(self.main_layout)
         pass

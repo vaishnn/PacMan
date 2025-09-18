@@ -12,17 +12,17 @@ class Installer(QWidget):
     # Current Implementation just brings 30 libraries
     # It is storing all the libraries but it is not displaying them
     populate = pyqtSignal()
-    populationFinished = pyqtSignal()
+    population_finished = pyqtSignal()
     details_fetched = pyqtSignal(str, dict)
     installed = pyqtSignal()
     def __init__(self, parent=None, config: dict = {}):
         super().__init__(parent)
         self.config = config
-        self.installerThread = None
+        self.installer_thread = None
         self.indexes_which_are_installed = []
-        self.sortedMatches = []
-        self.sortedMatches_with_install = []
-        self.allLibraries = []
+        self.sorted_matches = []
+        self.sorted_match_with_install = []
+        self.all_libraries = []
         self.python_exec = ""
         self.setStyleSheet(
             self.config.get('stylesheet', {}).get('tooltip','')
@@ -40,9 +40,9 @@ class Installer(QWidget):
 
     def _setup_ui(self):
         # Initialize the main layout
-        self.mainLayout = QVBoxLayout()
-        self.mainLayout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.mainLayout)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.main_layout)
 
         self._setup_search_bar()
         self._setup_list_model()
@@ -58,37 +58,35 @@ class Installer(QWidget):
         self.search_bar.setObjectName("searchBarInstaller")
         self.search_bar.setPlaceholderText("Search for libraries to install...")
         self.search_bar.textChanged.connect(self.filterList) # ADDED: Connect search bar to filter method
-        self.mainLayout.addWidget(self.search_bar)
+        self.main_layout.addWidget(self.search_bar)
 
     def _setup_list_model(self):
         # Using Model/View Architecture
-        self.libraryListView = QListView()
-        self.libraryListView.setEnabled(True)
+        self.library_list_view = QListView()
+        self.library_list_view.setEnabled(True)
 
-        self.libraryListView.setEditTriggers(QListView.EditTrigger.AllEditTriggers)
+        self.library_list_view.setEditTriggers(QListView.EditTrigger.AllEditTriggers)
 
-        self.libraryListView.setContentsMargins(0, 0, 0, 0)
-        self.libraryListView.setObjectName("installLibraryListView")
-        self.libraryListView.setSpacing(3)
-        self.libraryListView.setObjectName("libraryListViewInstaller")
-        self.libraryListView.setUniformItemSizes(False)
+        self.library_list_view.setContentsMargins(0, 0, 0, 0)
+        self.library_list_view.setObjectName("installLibraryListView")
+        self.library_list_view.setSpacing(3)
+        self.library_list_view.setObjectName("libraryListViewInstaller")
+        self.library_list_view.setUniformItemSizes(False)
 
         # List Model which holds the data for the library list view
-        self.sourceModel = LibraryListModel()
-        self.libraryListView.setModel(self.sourceModel)
-        self.delegate = PyPIitemDelegate(self.config, self.libraryListView)
-        self.libraryListView.setItemDelegate(self.delegate)
-        # self.libraryListView.setMouseTracking(True)
-        # self.sourceModel.modelReset.connect(self.openAllEditors)
-        self.mainLayout.addWidget(self.libraryListView)
+        self.source_model = LibraryListModel()
+        self.library_list_view.setModel(self.source_model)
+        self.delegate = PyPIitemDelegate(self.config, self.library_list_view)
+        self.library_list_view.setItemDelegate(self.delegate)
+        self.main_layout.addWidget(self.library_list_view)
 
     def _setup_timers(self):
         # Search Timer
-        self.scraperPyPI = PyPiRunner()
-        self.searchTimer = QTimer()
-        self.searchTimer.setInterval(300)
-        self.searchTimer.setSingleShot(True)
-        self.searchTimer.timeout.connect(self.filterList)
+        self.scraper_pypi = PyPiRunner()
+        self.search_timer = QTimer()
+        self.search_timer.setInterval(300)
+        self.search_timer.setSingleShot(True)
+        self.search_timer.timeout.connect(self.filterList)
 
         self.fetch_details_timer = QTimer()
         self.fetch_details_timer.setInterval(1000)
@@ -97,95 +95,96 @@ class Installer(QWidget):
 
 
     def set_status(self, libraries_list: list):
-        for library in self.sortedMatches:
+        for library in self.sorted_matches:
             if library in libraries_list:
                 try:
-                    index = self.sortedMatches.index(library)
-                    self.sortedMatches_with_install[index].update({'status': 'installed'})
-                    index_of_model = self.sourceModel.name_to_row.get(library, -1)
+                    index = self.sorted_matches.index(library)
+                    self.sorted_match_with_install[index].update({'status': 'installed'})
+                    index_of_model = self.source_model.name_to_row.get(library, -1)
                     if index_of_model != -1:
-                        idx = self.sourceModel.index(index_of_model)
-                        self.sourceModel.dataChanged.emit(idx, idx)
+                        idx = self.source_model.index(index_of_model)
+                        self.source_model.dataChanged.emit(idx, idx)
                 except ValueError:
                     continue
             else:
-                index = self.sortedMatches.index(library)
-                self.sortedMatches_with_install[index].update({'status': 'install'})
-                index_of_model = self.sourceModel.name_to_row.get(library, -1)
+                index = self.sorted_matches.index(library)
+                self.sorted_match_with_install[index].update({'status': 'install'})
+                index_of_model = self.source_model.name_to_row.get(library, -1)
                 if index_of_model != -1:
-                    idx = self.sourceModel.index(index_of_model)
-                    self.sourceModel.dataChanged.emit(idx, idx)
+                    idx = self.source_model.index(index_of_model)
+                    self.source_model.dataChanged.emit(idx, idx)
 
 
     def fetchDetails(self):
         # Fetch details of libraries
-        if self.sortedMatches:
+        if self.sorted_matches:
             self.get_details = GettingInstallerLibraryDetails(
                 self.config.get('paths', {}).get('executables', {}).get('pypiDetailFetcher', {}).get('darwin', "./pypi_detail_fetcher"),
-                self.sortedMatches
+                self.sorted_matches
             )
-            self.get_details.finished.connect(self.sourceModel.updateData)
+            self.get_details.finished.connect(self.source_model.updateData)
             self.get_details.start()
 
     def _show_installed_flag(self, return_code, model_index: QModelIndex):
 
         name_of_library = model_index.data(DataRole).get('name')
         self.installed.emit()
-        idx = self.sortedMatches.index(name_of_library)
+        idx = self.sorted_matches.index(name_of_library)
         if return_code == -1:
-            self.sortedMatches_with_install[idx].update({'status': 'failed'})
-            self.sourceModel.dataChanged.emit(model_index, model_index)
+            self.sorted_match_with_install[idx].update({'status': 'failed'})
+            self.source_model.dataChanged.emit(model_index, model_index)
         else:
-            self.sortedMatches_with_install[idx].update({'status': 'installed'})
-            self.sourceModel.dataChanged.emit(model_index, model_index)
-        self.installerThread = None
+            self.sorted_match_with_install[idx].update({'status': 'installed'})
+            self.source_model.dataChanged.emit(model_index, model_index)
+        self.installer_thread = None
 
     def _install_library(self, model_index: QModelIndex):
         name_of_library = model_index.data(DataRole).get('name')
-        idx = self.sortedMatches.index(name_of_library)
-        self.sortedMatches_with_install[idx].update({'status': 'installing'})
-        self.sourceModel.dataChanged.emit(model_index, model_index)
-        self.installerThread = InstallerLibraries(self.python_exec, name_of_library, model_index)
-        self.installerThread.finished.connect(self._show_installed_flag)
-        self.installerThread.finished.connect(self.installerThread.deleteLater)
-        self.installerThread.start()
+        idx = self.sorted_matches.index(name_of_library)
+        self.sorted_match_with_install[idx].update({'status': 'installing'})
+        self.source_model.dataChanged.emit(model_index, model_index)
+        self.installer_thread = InstallerLibraries(self.python_exec, name_of_library, model_index)
+        self.installer_thread.finished.connect(self._show_installed_flag)
+        self.installer_thread.finished.connect(self.installer_thread.deleteLater)
+        self.installer_thread.start()
 
     def _setup_signals_for_fetching_libraries(self):
         # Threading setup, fetching details of libraries will be in different function
-        self.sourceModel.remove_item.connect(lambda item: self.allLibraries.remove(item))
-        self.scraperPyPI.listOfLibraries.connect(self.getAllLibraries)
-        self.scraperPyPI.startFetching()
-        self.delegate.installClicked.connect(self._install_library)
+        self.source_model.remove_item.connect(lambda item: self.all_libraries.remove(item))
+        self.scraper_pypi.list_of_libraries.connect(self.getAllLibraries)
+        self.scraper_pypi.startFetching()
+        self.delegate.install_clicked.connect(self._install_library)
 
 
     def getAllLibraries(self, libraries: list):
-        self.allLibraries = libraries
-        self.search_bar.setPlaceholderText("Search for libraries to install from the {:,} available libraries".format(len(self.allLibraries)))
+        self.all_libraries = libraries
+        self.search_bar.setPlaceholderText("Search for libraries to install from the {:,} available libraries".format(len(self.all_libraries)))
         self.filterList()
 
     def openAllEditors(self):
-        for row in range(self.sourceModel.rowCount()):
-            index = self.sourceModel.index(row)
-            self.libraryListView.openPersistentEditor(index)
+        for row in range(self.source_model.rowCount()):
+            index = self.source_model.index(row)
+            self.library_list_view.openPersistentEditor(index)
 
     def filterList(self):
-        searchText = self.search_bar.text().lower()
-        if not searchText:
-            self.sortedMatches = self.allLibraries[:50]
-            self.sortedMatches_with_install = [{'name': name, 'status': 'install'} for name in self.sortedMatches]
+        search_text = self.search_bar.text().lower()
+        if not search_text:
+            self.sorted_matches = self.all_libraries[:50]
+            self.sorted_match_with_install = [{'name': name, 'status': 'install'} for name in self.sorted_matches]
         else:
             matches = [
-                item for item in self.allLibraries
-                if searchText in item.lower()
+                item for item in self.all_libraries
+                if search_text in item.lower()
             ]
-            self.sortedMatches = sorted(
+            self.sorted_matches = sorted(
                 matches,
-                key=lambda item: item.lower().find(searchText)
+                key=lambda item: item.lower().find(search_text)
             )
-            self.sortedMatches = self.sortedMatches[:50]
-            self.sortedMatches_with_install = [{'name': name, 'status': 'install'} for name in self.sortedMatches]
+            self.sorted_matches = self.sorted_matches[:50]
+            self.sorted_match_with_install = [{'name': name, 'status': 'install'} for name in self.sorted_matches]
 
-        self.populationFinished.emit()
+        self.population_finished.emit()
         self.fetch_details_timer.start(1000)
-        self.sourceModel.setDataList(self.sortedMatches_with_install)
-        self.sourceModel.set_name_to_row()
+        self.library_list_view.scrollToTop()
+        self.source_model.setDataList(self.sorted_match_with_install)
+        self.source_model.set_name_to_row()

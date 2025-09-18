@@ -67,7 +67,7 @@ func save_data(file_dir string) {
 	dbMutex.Unlock()
 
 	if err := os.WriteFile(file_dir, buffer.Bytes(), 0644); err != nil {
-		slog.Error(fmt.Sprintf("Failed to write package database: %v", err))
+		slog.Error("Failed to write package database: ", "error", err)
 	}
 }
 
@@ -117,7 +117,7 @@ func get_library_info(package_name string, wg *sync.WaitGroup) {
 func create_find_app_support_dir(app_name string) (string, error) {
 	home_dir, err := os.UserHomeDir()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to get user home directory: %v", err))
+		slog.Error("Failed to get user home directory: ", "error", err)
 	}
 	app_support_dir := filepath.Join(home_dir, "Library", "Application Support", app_name)
 
@@ -164,7 +164,7 @@ func main() {
 	}
 	if len(file) > 0 {
 		if err := json.Unmarshal(file, &package_database); err != nil {
-			slog.Error(fmt.Sprintf("Failed to unmarshal package database: %v", err))
+			slog.Error("Failed to unmarshal package database", "error", err)
 		}
 	}
 

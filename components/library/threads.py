@@ -51,7 +51,8 @@ class LibraryWorker(QObject):
             capture_output=True,
             text=True,
         )
-        print(result_details.stderr)
+        if result_details.stderr:
+            print(result_details.stderr)
         if result_details.stdout.strip() == "":
             self.details.emit([])
             return

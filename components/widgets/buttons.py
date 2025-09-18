@@ -14,9 +14,12 @@ class RotatingPushButton(QPushButton):
         super().__init__("", parent)
         self._rotation = 0
         self.animation_prop = False
+        self._events_disabled = True
         self.setProperty('angle', 0)
         self.setFlat(True)
 
+    def set_event_accessibility(self, condition):
+        self._events_disabled = condition
 
     def _setup_animation(self):
         """

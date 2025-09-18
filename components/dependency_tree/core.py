@@ -4,8 +4,8 @@ class DependencyTree(QWidget):
     def __init__(self):
         super().__init__()
         self.setObjectName("dependencyTree")
-        self.mainLayout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         label = QLabel("This is the dependencyTree Page")
-        self.mainLayout.addWidget(label)
-        self.setLayout(self.mainLayout)
+        self.main_layout.addWidget(label)
+        self.setLayout(self.main_layout)
         pass
