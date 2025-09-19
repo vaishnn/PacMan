@@ -2,6 +2,7 @@ import os
 import re
 import yaml
 from PyQt6.QtGui import QFont, QFontDatabase
+from helpers.utils import resource_path
 
 def load_font(font_path: str, font_size: int = 14) -> QFont:
     # This method is not working for relative paths, so currently using absolute paths
@@ -49,9 +50,14 @@ def process_yaml_templated(yaml_string: str, colors_dict):
 
         value = colors_dict
         try:
-            for key in var_path.split('.'):
+            path = False
+            for idx, key in enumerate(var_path.split('.')):
+                if idx == 0 and key.strip() == "paths":
+                    path = True
                 value = value[key]
 
+            if path is True:
+                value = resource_path(value)
             result = result.replace(full_match, value)
         except (KeyError, TypeError):
             print("Error processing YAML template: ", full_match)

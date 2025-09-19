@@ -4,7 +4,7 @@ from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QApplication, QSplashScreen
 from PyQt6.QtCore import Qt
 
-from main_window import PacMan
+from main_window import P4cMan
 from config.loader import load_config, load_font
 from helpers.state_manager import load_state
 from helpers.utils import resource_path
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     app.setStyleSheet(config.get("stylesheet", {}).get("main", ""))
 
-    window = PacMan(state, config)
+    window = P4cMan(state, config)
     window.show()
     splash.finish(window)
 

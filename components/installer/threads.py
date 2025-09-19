@@ -81,7 +81,7 @@ class InstallerLibraries(QThread):
 class PyPiRunner(QObject):
     """This class is for fetching libraries for PyPI"""
     list_of_libraries = pyqtSignal(list)
-    def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
+    def __init__(self, appName: str = "P4cMan", fileName: str = "library_list.txt"):
         super().__init__()
         self.thread_runner = QThread()
         self.worker = PyPiWorker(appName, fileName)
@@ -102,7 +102,7 @@ class PyPiWorker(QObject):
     """Worker for fetching libraries from PyPI"""
     list_of_libraries = pyqtSignal(list)
     finished = pyqtSignal()
-    def __init__(self, appName: str = "PacMan", fileName: str = "library_list.txt"):
+    def __init__(self, appName: str = "P4cMan", fileName: str = "library_list.txt"):
         super().__init__()
         self.appName = appName
         self.fileName = fileName

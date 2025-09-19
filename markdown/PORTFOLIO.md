@@ -1,6 +1,6 @@
 # About the Developer
 
-This project, codenamed "PacMan," serves as a comprehensive demonstration of my software engineering capabilities. While the name is playful, the application itself is a sophisticated Python environment and package manager, showcasing a deep understanding of application architecture, user interface design, and system-level tooling.
+This project, codenamed "P4cMan," serves as a comprehensive demonstration of my software engineering capabilities. While the name is playful, the application itself is a sophisticated Python environment and package manager, showcasing a deep understanding of application architecture, user interface design, and system-level tooling.
 
 This is not just a simple script; it is a well-structured, feature-rich desktop application that reflects a commitment to quality, scalability, and user experience.
 
@@ -19,7 +19,7 @@ A rich, responsive, and visually appealing user interface was built from the gro
 - A smooth onboarding experience for new users (`onboarding/`).
 - Attention to detail, such as a custom splash screen and iconography (`assets/`).
 
-- **See:** `pacman.py` for the main window logic and `ui/` for individual components.
+- **See:** `p4cman.py` for the main window logic and `ui/` for individual components.
 
 ### 3. Modern Application Architecture
 The project is intentionally designed to be modular and maintainable. Configuration, application state, business logic, and UI are all decoupled, making the application easy to extend and debug.

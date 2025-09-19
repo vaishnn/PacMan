@@ -136,7 +136,7 @@ func main() {
 	handler := slog.NewJSONHandler(os.Stderr, nil)
 	logger := slog.New(handler).With("service", "go-detail-api")
 	slog.SetDefault(logger)
-	app_name := "PacMan"
+	app_name := "P4cMan"
 	file_name := "library_details.json"
 
 	app_support_dir, err := create_find_app_support_dir(app_name)

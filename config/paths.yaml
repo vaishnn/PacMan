@@ -13,7 +13,10 @@ paths:
       installing: "assets/icons/installing.png"
       installed: "assets/icons/installed.png"
       arrowDown: "assets/icons/fold.png"
-      add: "assets/icons/add.png"
+      add: "assets/icons/add.svg"
+      close: "assets/icons/close.svg"
+      minimize: "assets/icons/minimize.svg"
+      maximize: "assets/icons/maximize.svg"
   executables:
     load_library:
       darwin: "./bin/darwin_arm64/library-loader"

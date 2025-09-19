@@ -1,6 +1,6 @@
 import json
 import os
-from .get_app_directory import get_app_support_directory
+from .utils import get_app_support_directory
 
 
 def load_state(file_name = "state.json"):

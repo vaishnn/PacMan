@@ -105,7 +105,7 @@ class Library(QWidget):
 
         self.inititalize_environment_button = RotatingPushButton()
         self.inititalize_environment_button.setIcon(
-            QIcon("assets/icons/add.svg")
+            QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('add', "assets/images/add.svg")))
         )
         # self.inititalize_environment_button.setIconSize(QSize(12, 12))
         self.inititalize_environment_button.setFixedSize(15, 30)

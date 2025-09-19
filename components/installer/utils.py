@@ -3,7 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import json
-from helpers.get_app_directory import get_app_support_directory
+from helpers.utils import get_app_support_directory
 
 def format_pypi_tooltip_html(pypi_data, font_family_name):
     """
@@ -124,7 +124,7 @@ def format_pypi_tooltip_html(pypi_data, font_family_name):
     """
 
 
-def save_file(data: list, app_name: str = "PacMan", file_name: str = "library_list.txt"):
+def save_file(data: list, app_name: str = "P4cMan", file_name: str = "library_list.txt"):
     """Saves data to a file in the application's support directory."""
     # Saves Data in a pre-defined directory
     app_support_dir = get_app_support_directory(app_name)
@@ -132,7 +132,7 @@ def save_file(data: list, app_name: str = "PacMan", file_name: str = "library_li
     with open(file_path, "w") as file:
         json.dump(data, file, indent=4)
 
-def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "library_list.txt") -> list:
+def download_data_from_pypi(app_name: str = "P4cMan", file_name: str = "library_list.txt") -> list:
     """Downloads the list of all PyPI packages and saves them to a file."""
     # Downloads Data from PyPi.org
     url = "https://pypi.org/simple/"
@@ -143,7 +143,7 @@ def download_data_from_pypi(app_name: str = "PacMan", file_name: str = "library_
     save_file(librarylist, app_name, file_name)
     return librarylist
 
-def load_data(app_name = "PacMan", file_name = "library_list.txt") -> list:
+def load_data(app_name = "P4cMan", file_name = "library_list.txt") -> list:
     """Loads data from a file in the application's support directory, downloading it if not present."""
     # Loads Data from a pre-defined directory
     try:

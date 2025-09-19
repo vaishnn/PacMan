@@ -1,4 +1,4 @@
-pyinstaller --name "PacMan" \
+pyinstaller --name "P4cMan" \
 --windowed \
 --icon "assets/icons/appLogo.png" \
 --add-data "assets:assets" \

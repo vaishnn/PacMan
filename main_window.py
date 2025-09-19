@@ -15,7 +15,7 @@ from components.settings.core import Setting
 from helpers.state_manager import save_state
 from components.onboarding.threads import PythonInterpreters
 
-class PacMan(QMainWindow):
+class P4cMan(QMainWindow):
     """
     Main Window of the Application
     - What someone can do with it, You can start it
@@ -30,7 +30,7 @@ class PacMan(QMainWindow):
         config: dict = {}
     ):
         """
-        Initializes the PacMan application window.
+        Initializes the P4cMan application window.
 
         Args:
             state_variables (dict): A dictionary containing the application's state.

@@ -2,6 +2,7 @@ from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 from .buttons import HoverIconButton  # Import from the same package
+from helpers.utils import resource_path
 
 class ControlBar(QWidget):
     """
@@ -34,7 +35,7 @@ class ControlBar(QWidget):
         self._setup_buttons()
 
         name_label = QLabel(
-            self.config.get('app', {}).get('name', 'PacMan')
+            self.config.get('app', {}).get('name', 'P4cMan')
         )
         name_label.setObjectName("nameLabel")
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter )
@@ -55,19 +56,25 @@ class ControlBar(QWidget):
         for the ControlBar widget.
         """
         # Close Button
-        self.close_button = HoverIconButton(icon_path="./assets/icons/close.svg")
+        self.close_button = HoverIconButton(
+            icon_path=resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('close', "./assets/icons/close.svg"))
+        )
         self.close_button.setObjectName("closeButton")
         self.close_button.setFixedSize(12, 12)
         self.close_button.clicked.connect(self.parent_window.close)
 
         # Minimize Button
-        self.minimize_button = HoverIconButton(icon_path="./assets/icons/minimize.svg")
+        self.minimize_button = HoverIconButton(
+            icon_path=resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('minimize', "./assets/icons/minimize.svg"))
+        )
         self.minimize_button.setObjectName("minimizeButton")
         self.minimize_button.setFixedSize(12, 12)
         self.minimize_button.clicked.connect(self.parent_window.showMinimized)
 
         # Maximize Button
-        self.maximize_button = HoverIconButton(icon_path="./assets/icons/maximize.svg")
+        self.maximize_button = HoverIconButton(
+            icon_path=resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('maximize', "./assets/icons/maximize.svg"))
+        )
         self.maximize_button.setObjectName("maximizeButton")
         self.maximize_button.setFixedSize(12, 12)
         self.maximize_button.clicked.connect(self.toggle_maximize)

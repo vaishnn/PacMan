@@ -1,8 +1,8 @@
-# PacMan 📦
+# P4cMan 📦
 
-PacMan is a modern, high-performance desktop application for managing Python virtual environments and their packages. Built with a sleek PyQt6 user interface and a powerful Go backend for heavy lifting, PacMan aims to provide a fast and intuitive development experience.
+P4cMan is a modern, high-performance desktop application for managing Python virtual environments and their packages. Built with a sleek PyQt6 user interface and a powerful Go backend for heavy lifting, P4cMan aims to provide a fast and intuitive development experience.
 
-![PacMan Demo](assets/readme/pacman-demo.gif)
+![P4cMan Demo](assets/readme/p4cman-demo.gif)
 
 
 ## ✨ Features
@@ -30,7 +30,7 @@ PacMan is a modern, high-performance desktop application for managing Python vir
 The project is organized into distinct modules for clarity and maintainability. This separation of concerns makes it easier to navigate, debug, and contribute to the codebase.
 
 ```plaintext
-PacMan/
+P4cMan/
 ├── main.py                 # Application entry point
 ├── main_window.py          # Main application shell (QMainWindow)
 |
@@ -56,8 +56,8 @@ Prerequisites
 
 1. Clone the repository
 ```bash
-git clone https://github.com/vaishnn/PacMan.git
-cd PacMan
+git clone https://github.com/vaishnn/P4cMan.git
+cd P4cMan
 ```
 2. Install Python dependencies
 - It's recommended to do this in a virtual environment.
