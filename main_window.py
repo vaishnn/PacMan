@@ -82,7 +82,8 @@ class P4cMan(QMainWindow):
                 self.state_variables.get('project_folder', ''),
                 self.state_variables.get('virtual_env_name', ''),
                 self.state_variables.get('loaded_virtual_envs', [])
-            )
+                )
+
 
     def _on_fully_loaded(self):
         pass
