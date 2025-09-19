@@ -3,6 +3,7 @@ from PyQt6.QtGui import QColor, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import QStyle, QStyledItemDelegate
 from ..widgets.tooltip import InteractiveToolTip
 from .models import DataRole
+from helpers.utils import resource_path
 
 
 class PyPIitemDelegate(QStyledItemDelegate):
@@ -123,23 +124,23 @@ class PyPIitemDelegate(QStyledItemDelegate):
         if status_install == "install" :
             if is_hovering_install :
                 self._draw_coloured_pixmap(painter, install_rect, QPixmap(
-                    self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
+                    resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", ""))
                 ), self.button_color, "#929292")
             else:
                 self._draw_coloured_pixmap(painter, install_rect, QPixmap(
-                    self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", "")
+                    resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("install", ""))
                 ), self.button_color)
         elif status_install == "installed":
             self._draw_coloured_pixmap(painter, install_rect, QPixmap(
-                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installed", "")
+                resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installed", ""))
             ), self.button_color)
         elif status_install == "installing":
             self._draw_coloured_pixmap(painter, install_rect, QPixmap(
-                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installing", "")
+                resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("installing", ""))
             ), self.button_color)
         elif status_install == "failed":
             self._draw_coloured_pixmap(painter, install_rect, QPixmap(
-                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("failed", "")
+                resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("failed", ""))
             ), self.button_color)
 
     def helpEvent(self, event, view, option, index) -> bool:

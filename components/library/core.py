@@ -14,6 +14,7 @@ from ..widgets.buttons import RotatingPushButton
 from .threads import LibraryThreads, Uninstall
 from .utils import rank_query, human_readable_size, format_tooltip_html
 from copy import deepcopy
+from helpers.utils import resource_path
 
 
 class Library(QWidget):
@@ -207,7 +208,7 @@ class Library(QWidget):
                 self.current_dir,
                 self.drop_down_for_creating_python_env.currentText().split(":")[1].strip(),
                 text,
-                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin')
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin'))
             )
             self.env_creator.new_virtual_env.connect(self._on_creating_new_virtual_env)
 
@@ -229,7 +230,7 @@ class Library(QWidget):
         self._set_python_exec_path([env['python_path'] for env in self.current_loaded_virtual_envs_list if env['venv_name'] == venv_name][0])
         self.worker.emit_signal_for_details(
             self.current_dir,
-            self.config.get('paths', {}).get('executables', {}).get('load_library', {}).get('darwin'),
+            resource_path(self.config.get('paths', {}).get('executables', {}).get('load_library', {}).get('darwin')),
             self.current_virtual_env
         )
 
@@ -346,16 +347,18 @@ class Library(QWidget):
             self.label_location.setText(directory_path)
             self.worker.emit_signal_for_virtual_envs(
                 directory_path,
-                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin'),
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin')),
             )
 
     def _venv_loaded_connected(self, venv_list):
         if isinstance(venv_list, list):
             if venv_list == []:
                 self.change_env_in_same_directory.clear()
+                self.current_loaded_virtual_envs_list = []
+                self.current_virtual_env = None
                 self.change_env_in_same_directory.setPlaceholderText("--")
                 self.stacked_library_with_loading_screen.setCurrentIndex(
-                    self.index_for_stacked_pages['loading_page']
+                    self.index_for_stacked_pages['page_no_env']
                 )
                 return
             self.current_virtual_env = venv_list[0].get('venv_name')
@@ -363,8 +366,8 @@ class Library(QWidget):
 
     def selection_location_from_main(self, directoryPath, venv_name, virtual_envs):
 
-        # if hasattr(self, 'env_creator'):
-        #     self.env_creator.quit()
+        if hasattr(self, 'env_creator'):
+            self.env_creator.quit()
 
 
         self.current_dir = directoryPath
@@ -430,7 +433,7 @@ class Library(QWidget):
             uninstall_button.setFixedSize(30, 30)
             uninstall_button.setObjectName("deleteButtonFromLibraryListWidget")
             uninstall_button.setIcon(QIcon(
-                self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall"),
+                resource_path(self.config.get("paths", {}).get("assets", {}).get("images", {}).get("uninstall")),
             ))
             uninstall_button.setIconSize(QSize(22, 22))
 
@@ -492,7 +495,7 @@ class Library(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             if packageName in self.item_map:
                 uninstall_button.setIcon(
-                    QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', ''))
+                    QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalling', '')))
                 )
             self.uninstall_manager = Uninstall(self.python_exec_path, packageName, uninstall_button)
             self.uninstall_manager.finished.connect(self.on_uninstall_finished)
@@ -512,12 +515,12 @@ class Library(QWidget):
                 self.library_list.takeItem(row)
         if success:
             uninstall_button.setIcon(
-                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', ''))
+                QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('uninstalled', '')))
             )
             QTimer.singleShot(2000, lambda: _pop_item_in_sometime(self))
         else:
             uninstall_button.setIcon(
-                QIcon(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', ''))
+                QIcon(resource_path(self.config.get('paths', {}).get('assets', {}).get('images', {}).get('failed', '')))
             )
             uninstall_button.setEnabled(False)
         self.uninstall_manager = None

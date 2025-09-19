@@ -9,6 +9,7 @@ from .threads import PythonInterpreters
 from ..widgets.helper_classes import LineEdit
 from .utils import loading_virtual_env, commit_action
 from ..widgets.control_bar import ControlBar
+from helpers.utils import resource_path
 
 class OnboardingPage(QWidget):
 
@@ -206,7 +207,7 @@ class OnboardingPage(QWidget):
                 self.project_location,
                 self.drop_down_for_creating_python_env.currentText().split(":")[1].strip(),
                 text,
-                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin', "./find_local_env")
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin', "./find_local_env"))
             )
 
     def _update_widget(self, code: int, venv_path: str, venv_name, all_venv_names):
@@ -235,7 +236,7 @@ class OnboardingPage(QWidget):
 
             self.worker.emit_signal_for_virtual_envs(
                 directory,
-                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin', "./find_local_env")
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin', "./find_local_env"))
             )
             self.project_location = directory
             self.browse_label.setText(f"Selected: {directory}")

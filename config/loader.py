@@ -71,10 +71,10 @@ def seperate_yaml(ui, stylesheet: dict):
 
     return _processed_stylesheets
 
-def load_config(ui_file_path="config/ui.yaml",
-    controls_file_path="config/paths.yaml",
-    paths_file_path="config/application.yaml",
-    application_path="config/controls.yaml") -> dict:
+def load_config(ui_file_path,
+    controls_file_path,
+    paths_file_path,
+    application_path) -> dict:
     """Just Merges Every Function Present in the File"""
     config = {}
     config.update(load_yaml(ui_file_path))

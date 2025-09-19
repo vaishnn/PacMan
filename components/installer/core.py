@@ -6,6 +6,7 @@ from .threads import GettingInstallerLibraryDetails, InstallerLibraries, PyPiRun
 from .models import LibraryListModel
 from .models import DataRole
 from .delegates import PyPIitemDelegate
+from helpers.utils import resource_path
 
 class Installer(QWidget):
     """Installer widget for installing libraries"""
@@ -121,7 +122,7 @@ class Installer(QWidget):
         # Fetch details of libraries
         if self.sorted_matches:
             self.get_details = GettingInstallerLibraryDetails(
-                self.config.get('paths', {}).get('executables', {}).get('pypiDetailFetcher', {}).get('darwin', "./pypi_detail_fetcher"),
+                resource_path(self.config.get('paths', {}).get('executables', {}).get('pypiDetailFetcher', {}).get('darwin', "./pypi_detail_fetcher")),
                 self.sorted_matches
             )
             self.get_details.finished.connect(self.source_model.updateData)
