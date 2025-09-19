@@ -7,7 +7,7 @@ ui:
       contentsMargin: [0, 0, 0, 0]
       spacing: 0
     sideBar:
-      minWidth: 100
+      minWidth: 200
       maxWidth: 200
       contentMargins: [10, 10, 10, 10]
       spacing: 15

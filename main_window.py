@@ -85,7 +85,7 @@ class PacMan(QMainWindow):
             )
 
     def _on_fully_loaded(self):
-        print(20)
+        pass
 
     def _set_connections(self):
         """
@@ -154,7 +154,7 @@ class PacMan(QMainWindow):
             "Settings": self.settings,
             "About": self.about
         }
-        self.navLists = ["Libraries", "Installer", "Analysis", "Dependency Tree", "Settings", "About"]
+        self.navLists = self.contentDict.keys()
         main_layout = QHBoxLayout(self.container)
         main_layout.setContentsMargins(
             *self.config.get("ui", {}).get('window', {}).get('mainLayout', {}).get('contentsMargin', [0, 0, 0, 0])
@@ -200,6 +200,7 @@ class PacMan(QMainWindow):
         """
         Switches the content of the application.
         """
+        self.onboarding_widget.worker.thread_library.deleteLater()
         self.main_stack.setCurrentWidget(self.container)
 
     def _setting_ui_properties(self):
@@ -222,7 +223,7 @@ class PacMan(QMainWindow):
         side_bar.setObjectName("sideBar")
         # sideBar.setFixedWidth(250)
         side_bar.setMinimumWidth(
-            self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get("minWidth", 100)
+            self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get("minWidth", 200)
         )
         side_bar.setMaximumWidth(
             self.config.get("ui", {}).get('window', {}).get("sideBar", {}).get("maxWidth", 200)

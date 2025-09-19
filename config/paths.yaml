@@ -15,13 +15,13 @@ paths:
       arrowDown: "assets/icons/fold.png"
       add: "assets/icons/add.png"
   executables:
-    loadLibrary:
+    load_library:
       darwin: "./bin/darwin_arm64/library-loader"
       win: "./bin/library-loader.exe" # change this to the correct path
     pypiDetailFetcher:
       darwin: "./bin/darwin_arm64/pypi-fetcher"
       win: "./bin/pypi-fetcher.exe" # change this to the correct path
-    findLocalEnv:
+    find_local_environment:
       darwin: "./bin/darwin_arm64/env-finder"
       win: "./bin/env-finder.exe" # change this to the correct path
 

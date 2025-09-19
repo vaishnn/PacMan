@@ -120,6 +120,7 @@ class LibraryWorker(QObject):
             text=True
         )
         try:
+
             venvs = json.loads(result_venvs.stdout)
         except json.JSONDecodeError:
             venvs = []

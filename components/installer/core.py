@@ -108,6 +108,8 @@ class Installer(QWidget):
                     continue
             else:
                 index = self.sorted_matches.index(library)
+                if index == -1:
+                    continue
                 self.sorted_match_with_install[index].update({'status': 'install'})
                 index_of_model = self.source_model.name_to_row.get(library, -1)
                 if index_of_model != -1:
@@ -145,16 +147,19 @@ class Installer(QWidget):
         self.source_model.dataChanged.emit(model_index, model_index)
         self.installer_thread = InstallerLibraries(self.python_exec, name_of_library, model_index)
         self.installer_thread.finished.connect(self._show_installed_flag)
-        self.installer_thread.finished.connect(self.installer_thread.deleteLater)
+        self.installer_thread.finished.connect(self.installer_thread.quit)
         self.installer_thread.start()
 
     def _setup_signals_for_fetching_libraries(self):
         # Threading setup, fetching details of libraries will be in different function
-        self.source_model.remove_item.connect(lambda item: self.all_libraries.remove(item))
+        self.source_model.remove_item.connect(self._remove_garbage_data)
         self.scraper_pypi.list_of_libraries.connect(self.getAllLibraries)
         self.scraper_pypi.startFetching()
         self.delegate.install_clicked.connect(self._install_library)
 
+    def _remove_garbage_data(self, item):
+        self.all_libraries.remove(item)
+        self.filterList()
 
     def getAllLibraries(self, libraries: list):
         self.all_libraries = libraries

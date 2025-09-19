@@ -10,6 +10,7 @@ from helpers.state_manager import load_state
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+
     pixmap = QPixmap("assets/icons/appLogo.png")
     pixmap = pixmap.scaled(400, 400, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
     splash = QSplashScreen(pixmap, Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.Tool)

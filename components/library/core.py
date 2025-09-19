@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (QComboBox, QFileDialog, QLineEdit, QMessageBox,
 from PyQt6.QtCore import (QEasingCurve, QPropertyAnimation, QTimer, Qt,
                         pyqtSignal, QSize, pyqtSlot)
 from ..widgets.helper_classes import LineEdit
+from ..onboarding.utils import commit_action
 from ..onboarding.utils import loading_virtual_env
 from ..widgets.tooltip import InteractiveToolTip
 from ..widgets.buttons import RotatingPushButton
@@ -48,6 +49,7 @@ class Library(QWidget):
         self.current_loaded_virtual_envs_list = []
         self.current_virtual_env = ""
         self.python_exec_path = ""
+        self.env_creator :LibraryThreads
         self.index_for_stacked_pages = {}
         self.already_inside_project = False
         self.current_dir = ""
@@ -162,9 +164,12 @@ class Library(QWidget):
         name_of_venv.setObjectName("customVirtualName")
 
 
-        drop_down_for_creating_python_env = QComboBox()
+        self.drop_down_for_creating_python_env = QComboBox()
         create_virtual_env_button = QPushButton("Create New Environment")
         create_virtual_env_button.setObjectName("createVirtualEnvButton")
+
+        create_virtual_env_button.clicked.connect(lambda: self._create_virtual_env(name_of_venv.toPlainText().strip()))
+
         second_layout = QHBoxLayout()
         cancel_button = QPushButton("Cancel")
         cancel_button.setObjectName("cancelEnvironmentCreatorButton")
@@ -178,7 +183,7 @@ class Library(QWidget):
         second_layout.addWidget(cancel_button)
 
         layout.addWidget(name_of_venv)
-        layout.addWidget(drop_down_for_creating_python_env)
+        layout.addWidget(self.drop_down_for_creating_python_env)
         layout.addWidget(create_virtual_env_button)
         layout.addLayout(second_layout)
 
@@ -189,9 +194,31 @@ class Library(QWidget):
 
 
     def _create_virtual_env(self, text):
-        if text in self.current_loaded_virtual_envs_list:
+        venv_names = [cur_venv['venv_name'] for cur_venv in self.current_loaded_virtual_envs_list]
+        if text == "":
+            text = "venv"
 
-            pass
+        if text in venv_names:
+            commit_action(self, "Same name environment already exist")
+        else:
+            self.stacked_library_with_loading_screen.setCurrentIndex(self.index_for_stacked_pages['loading_page'])
+            self.env_creator = LibraryThreads()
+            self.env_creator.emit_create_virtual_env(
+                self.current_dir,
+                self.drop_down_for_creating_python_env.currentText().split(":")[1].strip(),
+                text,
+                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin')
+            )
+            self.env_creator.new_virtual_env.connect(self._on_creating_new_virtual_env)
+
+    def _on_creating_new_virtual_env(self, success_code, directory, virtual_env_name, venvs):
+        if success_code == 1:
+            self.selection_location_from_main(directory, virtual_env_name, venvs)
+        elif success_code == 0:
+            self.stacked_library_with_loading_screen.setCurrentIndex(self.index_for_stacked_pages['loading_page'])
+        else:
+            commit_action(self, "Unknown error")
+
 
     def _change_virtual_env(self, directory, venv_name):
         """Changes the currently active virtual environment and triggers a refresh of the library list."""
@@ -202,7 +229,7 @@ class Library(QWidget):
         self._set_python_exec_path([env['python_path'] for env in self.current_loaded_virtual_envs_list if env['venv_name'] == venv_name][0])
         self.worker.emit_signal_for_details(
             self.current_dir,
-            self.config.get('paths', {}).get('executables', {}).get('loadLibrary', {}).get('darwin', "./load_library"),
+            self.config.get('paths', {}).get('executables', {}).get('load_library', {}).get('darwin'),
             self.current_virtual_env
         )
 
@@ -261,6 +288,9 @@ class Library(QWidget):
 
     def set_python_interpreters(self, interpreters: dict):
         self.python_interpreters = interpreters
+        if interpreters != {}:
+            for interpreter_path, python_version in interpreters.items():
+                self.drop_down_for_creating_python_env.addItem(f"{python_version}: {interpreter_path}")
 
     def _connect_signals(self):
         """Connects the class's own signals to their respective slots."""
@@ -316,7 +346,7 @@ class Library(QWidget):
             self.label_location.setText(directory_path)
             self.worker.emit_signal_for_virtual_envs(
                 directory_path,
-                self.config.get('paths', {}).get('executables', {}).get('findLocalEnv', {}).get('darwin', "./find_local_env"),
+                self.config.get('paths', {}).get('executables', {}).get('find_local_environment', {}).get('darwin'),
             )
 
     def _venv_loaded_connected(self, venv_list):
@@ -332,6 +362,11 @@ class Library(QWidget):
             self.venv_loaded.emit( self.current_dir, venv_list[0].get('venv_name'), venv_list)
 
     def selection_location_from_main(self, directoryPath, venv_name, virtual_envs):
+
+        # if hasattr(self, 'env_creator'):
+        #     self.env_creator.quit()
+
+
         self.current_dir = directoryPath
         self.label_location.setText(f"{directoryPath}")
         self.current_virtual_env = venv_name
